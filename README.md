@@ -93,23 +93,6 @@ Secara default server berjalan di port 3000. Untuk mengubahnya, edit file `serve
 const PORT = process.env.PORT || 3000;
 ```
 
-## Troubleshooting
-
-### QR Code Tidak Muncul
-- Pastikan server berjalan dengan benar
-- Refresh halaman browser
-- Periksa console browser untuk error
-
-### Kontak Tidak Dimuat
-- Pastikan WhatsApp sudah terhubung
-- Tunggu beberapa saat setelah koneksi
-- Coba refresh dan scan ulang QR Code
-
-### Pesan Tidak Terkirim
-- Periksa koneksi internet
-- Pastikan nomor kontak masih aktif
-- Jangan mengirim terlalu cepat (gunakan delay yang cukup)
-
 ### Error "Session Terminated"
 - Logout dari WhatsApp Web di browser lain
 - Hapus folder `.wwebjs_auth` jika ada

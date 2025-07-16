@@ -145,7 +145,9 @@ class WhatsAppBroadcastApp {
 
     connectToServer() {
         try {
-            this.socket = new WebSocket('ws://localhost:3000');
+            const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+            const host = window.location.host;
+            this.socket = new WebSocket(`${protocol}//${host}`);
             
             this.socket.onopen = () => {
                 console.log('Connected to server');

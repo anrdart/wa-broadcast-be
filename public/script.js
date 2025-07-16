@@ -145,7 +145,7 @@ class WhatsAppBroadcastApp {
 
     connectToServer() {
         try {
-            this.socket = new WebSocket('ws://whatsapp-broadcast-web.ekalliptus.my.id/');
+            this.socket = new WebSocket('ws://localhost:3000');
             
             this.socket.onopen = () => {
                 console.log('Connected to server');

@@ -7,6 +7,7 @@ class WhatsAppBroadcastApp {
         this.selectedContacts = new Set();
         this.isConnected = false;
         this.isSending = false;
+        this.MAX_CONTACTS = 256;
         
         this.initializeElements();
         this.attachEventListeners();
@@ -36,7 +37,7 @@ class WhatsAppBroadcastApp {
         this.refreshContactsBtn = document.getElementById('refresh-contacts');
         this.searchContacts = document.getElementById('search-contacts');
         this.filterSaved = document.getElementById('filter-saved');
-        this.filterUnsaved = document.getElementById('filter-unsaved');
+        this.filterCsv = document.getElementById('filter-csv');
         
         // Message elements
         this.messageText = document.getElementById('message-text');
@@ -65,7 +66,7 @@ class WhatsAppBroadcastApp {
         this.refreshContactsBtn.addEventListener('click', () => this.refreshContacts());
         this.searchContacts.addEventListener('input', () => this.filterContacts());
         this.filterSaved.addEventListener('change', () => this.filterContacts());
-        this.filterUnsaved.addEventListener('change', () => this.filterContacts());
+        this.filterCsv.addEventListener('change', () => this.filterContacts());
         
         // Add select all functionality
         document.addEventListener('click', (e) => {
@@ -203,17 +204,35 @@ class WhatsAppBroadcastApp {
             skipEmptyLines: true,
             complete: (results) => {
                 const importedContacts = results.data.map(row => ({
-                    id: row.number || row.phone,
-                    name: row.name || null,
-                    number: row.number || row.phone,
-                    isMyContact: false
-                }));
-                this.contacts = [...this.contacts, ...importedContacts];
+                id: row.number || row.phone,
+                name: row.name || null,
+                number: this.formatNumber(row.number || row.phone),
+                isMyContact: false,
+                isFromCSV: true
+            }));
+                // Deduplikasi berdasarkan number
+                const uniqueImported = importedContacts.filter(imp => !this.contacts.some(existing => existing.number === imp.number));
+                // Batasi jumlah import agar tidak melebihi sisa slot
+                const availableSlots = this.MAX_CONTACTS - this.selectedContacts.size;
+                const addedContacts = uniqueImported.slice(0, availableSlots);
+                this.contacts = [...this.contacts, ...addedContacts];
                 this.renderContacts();
                 this.totalContacts.textContent = this.contacts.length;
                 this.csvFileInput.value = '';
+                if (uniqueImported.length > addedContacts.length) {
+                    alert(`Hanya ${addedContacts.length} kontak baru ditambahkan. Sisa dibatasi karena limit maksimal.`);
+                }
+                this.filterCsv.checked = true;
+                this.filterContacts();
             }
         });
+    }
+
+    formatNumber(number) {
+        if (number.startsWith('62')) {
+            return '0' + number.substring(2);
+        }
+        return number;
     }
 
     refreshContacts() {
@@ -252,8 +271,8 @@ class WhatsAppBroadcastApp {
                     <div class="contact-name">${contact.name || 'Tidak Dikenal'}</div>
                     <div class="contact-number">${contact.number}</div>
                 </div>
-                <span class="contact-type ${contact.isMyContact ? 'contact-saved' : 'contact-unsaved'}">
-                    ${contact.isMyContact ? 'Tersimpan' : 'Tidak Tersimpan'}
+                <span class="contact-type ${contact.isMyContact ? 'contact-saved' : (contact.isFromCSV ? 'contact-csv' : 'contact-unsaved')}">
+                    ${contact.isMyContact ? 'Tersimpan' : (contact.isFromCSV ? 'Dari CSV' : 'Tidak Tersimpan')}
                 </span>
             </div>
         `).join('');
@@ -289,12 +308,12 @@ class WhatsAppBroadcastApp {
         
         // Filter by type
         const showSaved = this.filterSaved.checked;
-        const showUnsaved = this.filterUnsaved.checked;
+        const showCsv = this.filterCsv.checked;
         
-        if (!showSaved || !showUnsaved) {
+        if (!showSaved || !showCsv) {
             filtered = filtered.filter(contact => {
                 if (showSaved && contact.isMyContact) return true;
-                if (showUnsaved && !contact.isMyContact) return true;
+                if (showCsv && (contact.isFromCSV || !contact.isMyContact)) return true;
                 return false;
             });
         }
@@ -312,6 +331,11 @@ class WhatsAppBroadcastApp {
         const isChecked = e.target.checked;
         
         if (isChecked) {
+            if (this.selectedContacts.size >= this.MAX_CONTACTS) {
+                e.target.checked = false;
+                alert('Maksimal 256 kontak yang dapat dipilih.');
+                return;
+            }
             this.selectedContacts.add(contactId);
             e.target.closest('.contact-item').classList.add('selected');
         } else {
@@ -323,7 +347,7 @@ class WhatsAppBroadcastApp {
     }
 
     updateSelectedContacts() {
-        this.selectedCount.textContent = this.selectedContacts.size;
+        this.selectedCount.textContent = `${this.selectedContacts.size}/${this.MAX_CONTACTS}`;
         this.updateSendButton();
     }
 
@@ -352,18 +376,29 @@ class WhatsAppBroadcastApp {
     selectAllContacts(checked) {
         const checkboxes = this.contactsList.querySelectorAll('.contact-checkbox');
         
-        checkboxes.forEach(checkbox => {
-            checkbox.checked = checked;
-            const contactId = checkbox.dataset.id;
-            
-            if (checked) {
-                this.selectedContacts.add(contactId);
-                checkbox.closest('.contact-item').classList.add('selected');
-            } else {
+        if (checked) {
+            let added = this.selectedContacts.size;
+            checkboxes.forEach(checkbox => {
+                if (added >= this.MAX_CONTACTS) {
+                    checkbox.checked = false;
+                    return;
+                }
+                if (!checkbox.checked) {
+                    checkbox.checked = true;
+                    const contactId = checkbox.dataset.id;
+                    this.selectedContacts.add(contactId);
+                    checkbox.closest('.contact-item').classList.add('selected');
+                    added++;
+                }
+            });
+        } else {
+            checkboxes.forEach(checkbox => {
+                checkbox.checked = false;
+                const contactId = checkbox.dataset.id;
                 this.selectedContacts.delete(contactId);
                 checkbox.closest('.contact-item').classList.remove('selected');
-            }
-        });
+            });
+        }
         
         this.updateSelectedContacts();
     }
@@ -488,6 +523,11 @@ class WhatsAppBroadcastApp {
         this.connectBtn.innerHTML = '<i class="fas fa-play"></i> Mulai Koneksi';
         this.connectBtn.disabled = false;
         this.logoutBtn.style.display = 'none';
+        this.contacts = [];
+        this.selectedContacts.clear();
+        this.renderContacts();
+        this.updateSelectedContacts();
+        this.totalContacts.textContent = '0';
         console.log('WhatsApp disconnected:', message);
     }
 

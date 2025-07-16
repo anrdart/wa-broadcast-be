@@ -44,20 +44,39 @@ class WhatsAppBroadcastApp {
         this.includeMedia = document.getElementById('include-media');
         this.mediaFile = document.getElementById('media-file');
         this.selectMedia = document.getElementById('select-media');
+        this.mediaUploadArea = document.getElementById('media-upload-area');
+        this.mediaDropZone = document.getElementById('media-drop-zone');
+        this.mediaPreview = document.getElementById('media-preview');
         this.selectedCount = document.getElementById('selected-count');
         this.sendBroadcast = document.getElementById('send-broadcast');
         
-        // Progress elements
-        this.progressSection = document.getElementById('progress-section');
-        this.progressFill = document.getElementById('progress-fill');
+        // Debug: Check if elements exist
+        console.log('Media elements check:', {
+            includeMedia: !!this.includeMedia,
+            mediaUploadArea: !!this.mediaUploadArea,
+            mediaDropZone: !!this.mediaDropZone,
+            mediaPreview: !!this.mediaPreview
+        });
+        
+        // Progress modal elements
+        this.progressModal = document.getElementById('progress-modal');
+        this.progressRingFill = document.getElementById('progress-ring-fill');
         this.progressText = document.getElementById('progress-text');
         this.progressPercentage = document.getElementById('progress-percentage');
+        this.progressStatus = document.getElementById('progress-status');
         this.progressLog = document.getElementById('progress-log');
+        this.closeProgressBtn = document.getElementById('close-progress');
+        
+        // Confirm modal elements
+        this.confirmModal = document.getElementById('confirm-modal');
+        this.confirmMessage = document.getElementById('confirm-message');
+        this.confirmOk = document.getElementById('confirm-ok');
+        this.confirmCancel = document.getElementById('confirm-cancel');
     }
 
     attachEventListeners() {
-        // Connection
-        this.connectBtn.addEventListener('click', () => this.handleConnect());
+        // Connect
+        this.connectBtn.addEventListener('click', () => this.connectToServer());
         this.logoutBtn.addEventListener('click', () => this.handleLogout());
         this.importCsvBtn.addEventListener('click', () => this.csvFileInput.click());
         this.csvFileInput.addEventListener('change', () => this.handleCsvImport());
@@ -77,8 +96,47 @@ class WhatsAppBroadcastApp {
         
         // Media
         this.includeMedia.addEventListener('change', () => this.toggleMediaSelection());
-        this.selectMedia.addEventListener('click', () => this.mediaFile.click());
+        if (this.selectMedia) {
+            this.selectMedia.addEventListener('click', () => this.mediaFile.click());
+        }
         this.mediaFile.addEventListener('change', () => this.handleMediaSelection());
+        
+        // Media drag and drop
+        if (this.mediaDropZone) {
+            this.mediaDropZone.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                this.mediaDropZone.style.borderColor = '#667eea';
+                this.mediaDropZone.style.background = '#f0f4ff';
+            });
+            
+            this.mediaDropZone.addEventListener('dragleave', (e) => {
+                e.preventDefault();
+                this.mediaDropZone.style.borderColor = '#e2e8f0';
+                this.mediaDropZone.style.background = '#f8f9fa';
+            });
+            
+            this.mediaDropZone.addEventListener('drop', (e) => {
+                e.preventDefault();
+                this.mediaDropZone.style.borderColor = '#e2e8f0';
+                this.mediaDropZone.style.background = '#f8f9fa';
+                
+                const files = e.dataTransfer.files;
+                if (files.length > 0) {
+                    this.mediaFile.files = files;
+                    this.handleMediaSelection();
+                }
+            });
+        }
+        
+        // Progress modal
+        if (this.closeProgressBtn) {
+            this.closeProgressBtn.addEventListener('click', () => this.hideProgressModal());
+        }
+        
+        // Confirm modal
+        if (this.confirmCancel) {
+            this.confirmCancel.addEventListener('click', () => this.hideConfirmModal());
+        }
         
         // Broadcast
         this.sendBroadcast.addEventListener('click', () => this.handleSendBroadcast());
@@ -152,33 +210,44 @@ class WhatsAppBroadcastApp {
     
 
     showQRCode(qrData) {
-        console.log('Attempting to show QR code:', qrData);
-        this.qrSection.style.display = 'block';
+        console.log('Displaying QR code:', qrData);
+        this.updateStatus('connecting', 'Scan QR Code dengan WhatsApp');
+        
+        // Clear previous QR code and show section
         this.qrContainer.innerHTML = '';
+        this.qrSection.style.display = 'block';
         
         // Check if QRCode library is available
         if (typeof QRCode === 'undefined') {
             console.error('QRCode library not loaded');
             this.qrContainer.innerHTML = '<p>Error: QR Code library tidak tersedia</p>';
+            this.updateStatus('error', 'QRCode library tidak tersedia');
             return;
         }
         
-        new QRCode(this.qrContainer, {
-            text: qrData,
-            width: 256,
-            height: 256,
-            colorDark: '#000000',
-            colorLight: '#ffffff',
-            correctLevel: QRCode.CorrectLevel.H
-        });
-        console.log('QR Code generated successfully');
-        
-        this.updateStatus('connecting', 'Scan QR Code dengan WhatsApp');
+        // Generate new QR code using library constructor
+        try {
+            new QRCode(this.qrContainer, {
+                text: qrData,
+                width: 256,
+                height: 256,
+                colorDark: '#000000',
+                colorLight: '#ffffff',
+                correctLevel: QRCode.CorrectLevel.H
+            });
+            console.log('QR Code generated successfully');
+        } catch (error) {
+            console.error('Error generating QR code:', error);
+            console.error('Error details:', error.stack);
+            this.qrContainer.innerHTML = '<p>Error generating QR code: ' + error.message + '</p>';
+            this.updateStatus('error', 'Gagal generate QR code: ' + error.message);
+        }
     }
 
     handleAuthenticated() {
         this.qrSection.style.display = 'none';
         this.updateStatus('connecting', 'Autentikasi berhasil, memuat data...');
+        this.showNotification('QR Code berhasil dipindai!', 'success');
     }
 
     handleReady() {
@@ -187,7 +256,16 @@ class WhatsAppBroadcastApp {
         this.connectBtn.innerHTML = '<i class="fas fa-check"></i> Terhubung';
         this.connectBtn.disabled = true;
         this.logoutBtn.style.display = 'inline-block';
+        // Don't hide QR section
+        // this.qrSection.style.display = 'none';
+        this.showNotification('WhatsApp berhasil terhubung!', 'success');
         this.refreshContacts();
+        console.log('WhatsApp ready');
+        // Add connected indicator
+        const connectedIcon = document.createElement('div');
+        connectedIcon.className = 'connected-icon';
+        connectedIcon.innerHTML = '<i class="fas fa-check-circle"></i> Terhubung';
+        this.qrContainer.appendChild(connectedIcon);
     }
 
     handleContacts(contacts) {
@@ -204,12 +282,12 @@ class WhatsAppBroadcastApp {
             skipEmptyLines: true,
             complete: (results) => {
                 const importedContacts = results.data.map(row => ({
-                id: row.number || row.phone,
-                name: row.name || null,
-                number: this.formatNumber(row.number || row.phone),
-                isMyContact: false,
-                isFromCSV: true
-            }));
+                    id: row.number || row.phone,
+                    name: row.name || null,
+                    number: this.formatNumber(row.number || row.phone),
+                    isMyContact: false,
+                    isFromCSV: true
+                }));
                 // Deduplikasi berdasarkan number
                 const uniqueImported = importedContacts.filter(imp => !this.contacts.some(existing => existing.number === imp.number));
                 // Batasi jumlah import agar tidak melebihi sisa slot
@@ -361,16 +439,79 @@ class WhatsAppBroadcastApp {
     }
 
     toggleMediaSelection() {
-        const showMedia = this.includeMedia.checked;
-        this.selectMedia.style.display = showMedia ? 'inline-flex' : 'none';
-        this.mediaFile.style.display = showMedia ? 'block' : 'none';
+        if (this.includeMedia.checked) {
+            this.mediaUploadArea.style.display = 'block';
+        } else {
+            this.mediaUploadArea.style.display = 'none';
+            this.mediaFile.value = '';
+            this.mediaPreview.style.display = 'none';
+            this.mediaDropZone.style.display = 'block';
+        }
     }
 
     handleMediaSelection() {
         const file = this.mediaFile.files[0];
         if (file) {
-            this.selectMedia.innerHTML = `<i class="fas fa-paperclip"></i> ${file.name}`;
+            console.log('Media file selected:', file.name);
+            this.showMediaPreview(file);
         }
+    }
+    
+    showMediaPreview(file) {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            let previewHTML = '';
+            
+            if (file.type.startsWith('image/')) {
+                previewHTML = `
+                    <div class="preview-item">
+                        <img src="${e.target.result}" alt="Preview" style="max-width: 200px; max-height: 200px; border-radius: 8px;">
+                        <div class="preview-info">
+                            <p><strong>${file.name}</strong></p>
+                            <p>${(file.size / 1024 / 1024).toFixed(2)} MB</p>
+                            <button onclick="this.parentElement.parentElement.parentElement.style.display='none'; document.getElementById('media-drop-zone').style.display='block'; document.getElementById('media-file').value=''" class="btn btn-secondary btn-sm">
+                                <i class="fas fa-times"></i> Hapus
+                            </button>
+                        </div>
+                    </div>
+                `;
+            } else if (file.type.startsWith('video/')) {
+                previewHTML = `
+                    <div class="preview-item">
+                        <video controls style="max-width: 200px; max-height: 200px; border-radius: 8px;">
+                            <source src="${e.target.result}" type="${file.type}">
+                        </video>
+                        <div class="preview-info">
+                            <p><strong>${file.name}</strong></p>
+                            <p>${(file.size / 1024 / 1024).toFixed(2)} MB</p>
+                            <button onclick="this.parentElement.parentElement.parentElement.style.display='none'; document.getElementById('media-drop-zone').style.display='block'; document.getElementById('media-file').value=''" class="btn btn-secondary btn-sm">
+                                <i class="fas fa-times"></i> Hapus
+                            </button>
+                        </div>
+                    </div>
+                `;
+            } else {
+                previewHTML = `
+                    <div class="preview-item">
+                        <div class="file-icon">
+                            <i class="fas fa-file" style="font-size: 3rem; color: #667eea;"></i>
+                        </div>
+                        <div class="preview-info">
+                            <p><strong>${file.name}</strong></p>
+                            <p>${(file.size / 1024 / 1024).toFixed(2)} MB</p>
+                            <button onclick="this.parentElement.parentElement.parentElement.style.display='none'; document.getElementById('media-drop-zone').style.display='block'; document.getElementById('media-file').value=''" class="btn btn-secondary btn-sm">
+                                <i class="fas fa-times"></i> Hapus
+                            </button>
+                        </div>
+                    </div>
+                `;
+            }
+            
+            this.mediaPreview.innerHTML = previewHTML;
+            this.mediaPreview.style.display = 'block';
+            this.mediaDropZone.style.display = 'none';
+        };
+        reader.readAsDataURL(file);
     }
 
     selectAllContacts(checked) {
@@ -418,68 +559,134 @@ class WhatsAppBroadcastApp {
         const selectedContactIds = Array.from(this.selectedContacts);
         
         if (!message || selectedContactIds.length === 0) {
-            alert('Silakan masukkan pesan dan pilih kontak terlebih dahulu.');
+            this.showNotification('Silakan masukkan pesan dan pilih kontak terlebih dahulu.', 'error');
             return;
         }
         
         // Show confirmation modal
-        const confirmModal = document.getElementById('confirm-modal');
-        const confirmMessage = document.getElementById('confirm-message');
-        const confirmOk = document.getElementById('confirm-ok');
-        const confirmCancel = document.getElementById('confirm-cancel');
+        const confirmMessage = `Kirim pesan ke ${selectedContactIds.length} kontak?`;
+        this.showConfirmModal(confirmMessage, () => {
+            this.sendBroadcastMessage(message, selectedContactIds);
+        });
+    }
+    
+    sendBroadcastMessage(message, selectedContactIds) {
+        this.isSending = true;
+        this.sendBroadcast.innerHTML = '<i class="fas fa-spinner fa-spin"></i><span>Mengirim...</span>';
+        this.sendBroadcast.disabled = true;
         
-        confirmMessage.textContent = `Kirim pesan ke ${selectedContactIds.length} kontak?`;
-        confirmModal.classList.remove('hidden');
+        // Show progress modal
+        this.showProgressModal();
         
-        const handleConfirm = () => {
-            confirmModal.classList.add('hidden');
-            confirmOk.removeEventListener('click', onOk);
-            confirmCancel.removeEventListener('click', onCancel);
+        const broadcastData = {
+            type: 'send_broadcast',
+            message: message,
+            contacts: selectedContactIds
         };
         
-        const onOk = () => {
-            handleConfirm();
-            this.isSending = true;
-            this.sendBroadcast.innerHTML = '<div class="loading"></div> Mengirim...';
-            this.sendBroadcast.disabled = true;
-            
-            this.progressSection.style.display = 'block';
-            this.progressFill.style.width = '0%';
-            this.progressText.textContent = `0 / ${selectedContactIds.length}`;
-            this.progressPercentage.textContent = '0%';
-            this.progressLog.innerHTML = '';
-            
-            const broadcastData = {
-                type: 'send_broadcast',
-                message: message,
-                contacts: selectedContactIds,
-                media: this.includeMedia.checked && this.mediaFile.files[0] ? {
-                    name: this.mediaFile.files[0].name,
-                    type: this.mediaFile.files[0].type,
-                    size: this.mediaFile.files[0].size
-                } : null
+        if (this.includeMedia.checked && this.mediaFile.files[0]) {
+            const file = this.mediaFile.files[0];
+            const reader = new FileReader();
+            reader.onload = () => {
+                broadcastData.media = {
+                    data: reader.result.split(',')[1], // base64 data
+                    mimetype: file.type,
+                    filename: file.name
+                };
+                this.socket.send(JSON.stringify(broadcastData));
             };
-            
+            reader.readAsDataURL(file);
+        } else {
             this.socket.send(JSON.stringify(broadcastData));
-            
-            this.addLogEntry('info', 'Memulai pengiriman broadcast...');
-        };
+        }
         
-        const onCancel = () => {
-            handleConfirm();
-        };
+        this.addLogEntry('info', 'Memulai pengiriman broadcast...');
+    }
+    
+    showConfirmModal(message, onConfirm) {
+        this.confirmMessage.textContent = message;
+        this.confirmModal.style.display = 'flex';
         
-        confirmOk.addEventListener('click', onOk);
-        confirmCancel.addEventListener('click', onCancel);
+        // Remove previous event listeners
+        const newConfirmOk = this.confirmOk.cloneNode(true);
+        this.confirmOk.parentNode.replaceChild(newConfirmOk, this.confirmOk);
+        this.confirmOk = newConfirmOk;
+        
+        this.confirmOk.addEventListener('click', () => {
+            this.hideConfirmModal();
+            onConfirm();
+        });
+    }
+    
+    hideConfirmModal() {
+        this.confirmModal.style.display = 'none';
+    }
+    
+    showProgressModal() {
+        this.progressModal.style.display = 'flex';
+        // Reset progress
+        this.progressRingFill.style.strokeDasharray = '0 327';
+        this.progressPercentage.textContent = '0%';
+        this.progressText.textContent = '0 / 0';
+        this.progressStatus.textContent = 'Memulai...';
+        this.progressLog.innerHTML = '';
+    }
+    
+    hideProgressModal() {
+        this.progressModal.style.display = 'none';
+    }
+    
+    showNotification(message, type = 'info') {
+        // Create a simple notification
+        const notification = document.createElement('div');
+        notification.className = `notification notification-${type}`;
+        notification.style.cssText = `
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 15px 20px;
+            border-radius: 8px;
+            color: white;
+            font-weight: 600;
+            z-index: 10000;
+            animation: slideIn 0.3s ease;
+        `;
+        
+        if (type === 'success') {
+            notification.style.background = '#25D366';
+        } else if (type === 'error') {
+            notification.style.background = '#e74c3c';
+        } else {
+            notification.style.background = '#3498db';
+        }
+        
+        notification.textContent = message;
+        document.body.appendChild(notification);
+        
+        setTimeout(() => {
+            notification.style.animation = 'slideOut 0.3s ease';
+            setTimeout(() => {
+                if (notification.parentNode) {
+                    document.body.removeChild(notification);
+                }
+            }, 300);
+        }, 3000);
     }
 
     handleBroadcastProgress(data) {
         const { current, total, contact, success, error } = data;
         const percentage = Math.round((current / total) * 100);
         
-        this.progressFill.style.width = `${percentage}%`;
+        // Update progress circle
+        const circumference = 2 * Math.PI * 52; // radius = 52
+        const offset = circumference - (percentage / 100) * circumference;
+        this.progressRingFill.style.strokeDasharray = `${circumference} ${circumference}`;
+        this.progressRingFill.style.strokeDashoffset = offset;
+        
+        // Update text elements
         this.progressText.textContent = `${current} / ${total}`;
         this.progressPercentage.textContent = `${percentage}%`;
+        this.progressStatus.textContent = current === total ? 'Selesai' : 'Mengirim...';
         
         if (success) {
             this.addLogEntry('success', `✓ Berhasil kirim ke ${contact.name || contact.number}`);
@@ -490,11 +697,26 @@ class WhatsAppBroadcastApp {
 
     handleBroadcastComplete(data) {
         this.isSending = false;
-        this.sendBroadcast.innerHTML = '<i class="fas fa-broadcast-tower"></i> Kirim Broadcast';
+        this.sendBroadcast.innerHTML = '<i class="fas fa-rocket"></i><span>Kirim Broadcast</span>';
         this.updateSendButton();
         
         const { successful, failed, total } = data;
+        
+        // Final progress update
+        const circumference = 2 * Math.PI * 52;
+        this.progressRingFill.style.strokeDasharray = `${circumference} ${circumference}`;
+        this.progressRingFill.style.strokeDashoffset = 0;
+        this.progressPercentage.textContent = '100%';
+        this.progressStatus.textContent = 'Selesai!';
+        
+        // Add completion log
         this.addLogEntry('info', `Broadcast selesai! Berhasil: ${successful}, Gagal: ${failed}, Total: ${total}`);
+        
+        // Auto close modal after 3 seconds
+        setTimeout(() => {
+            this.hideProgressModal();
+            this.showNotification(`Broadcast selesai! Berhasil: ${successful}, Gagal: ${failed}`, 'success');
+        }, 3000);
         
         // Clear selections
         this.selectedContacts.clear();

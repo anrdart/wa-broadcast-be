@@ -111,7 +111,6 @@ const PORT = process.env.PORT || 3000;
 ## Bug
 
 - Fitur import kontak dari CSV tidak berfungsi
-- Pengiriman pesan dengan media tidak berfungsi
 
 ## Lisensi
 

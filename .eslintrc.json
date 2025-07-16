@@ -14,7 +14,7 @@
         "ecmaVersion": 2022
     },
     "plugins": ["mocha"],
-    "ignorePatterns": ["docs"],
+    "ignorePatterns": ["docs", "public/qrcode.min.js"],
     "rules": {
         "indent": [
             "error",

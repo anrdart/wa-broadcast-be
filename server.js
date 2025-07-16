@@ -2,7 +2,7 @@ const express = require('express');
 const http = require('http');
 const WebSocket = require('ws');
 const path = require('path');
-const { Client, LocalAuth } = require('whatsapp-web.js');
+const { Client, LocalAuth, MessageMedia } = require('whatsapp-web.js');
 
 class WhatsAppBroadcastServer {
     constructor() {
@@ -110,9 +110,6 @@ class WhatsAppBroadcastServer {
                     authStrategy: new LocalAuth({
                         clientId: 'broadcast-client'
                     }),
-                    webVersionCache: {
-                        type: 'none'
-                    },
                     puppeteer: {
                         headless: true,
                         args: [
@@ -267,7 +264,7 @@ class WhatsAppBroadcastServer {
             return;
         }
         
-        const { message, contacts: contactIds } = data;
+        const { message, contacts: contactIds, media } = data;
         
         if (!message || !contactIds || contactIds.length === 0) {
             this.broadcast({ type: 'error', message: 'Message and contacts are required' });
@@ -290,7 +287,12 @@ class WhatsAppBroadcastServer {
                     await this.delay(2000 + Math.random() * 3000); // 2-5 seconds delay
                 }
                 
-                await this.whatsappClient.sendMessage(contactId, message);
+                if (media) {
+                    const mediaMessage = new MessageMedia(media.mimetype, media.data, media.filename);
+                    await this.whatsappClient.sendMessage(contactId, mediaMessage, { caption: message });
+                } else {
+                    await this.whatsappClient.sendMessage(contactId, message);
+                }
                 successful++;
                 
                 console.log(`Message sent to ${contact?.name || contact?.number || contactId}`);
@@ -302,35 +304,21 @@ class WhatsAppBroadcastServer {
                     contact: contact || { id: contactId, name: null, number: contactId },
                     success: true
                 });
-                
             } catch (error) {
-                if (error.message && error.message.includes('Cannot read properties of undefined (reading \'serialize\')')) {
-                    successful++;
-                    console.log(`Message sent successfully to ${contact?.name || contact?.number || contactId} despite library error`);
-                    this.broadcast({
-                        type: 'broadcast_progress',
-                        current: i + 1,
-                        total,
-                        contact: contact || { id: contactId, name: null, number: contactId },
-                        success: true
-                    });
-                } else {
-                    failed++;
-                    console.error(`Failed to send message to ${contactId}:`, error.message);
-                    this.broadcast({
-                        type: 'broadcast_progress',
-                        current: i + 1,
-                        total,
-                        contact: contact || { id: contactId, name: null, number: contactId },
-                        success: false,
-                        error: error.message
-                    });
-                }
+                failed++;
+                console.error(`Failed to send to ${contact?.name || contact?.number || contactId}:`, error);
+                this.broadcast({
+                    type: 'broadcast_progress',
+                    current: i + 1,
+                    total,
+                    contact: contact || { id: contactId, name: null, number: contactId },
+                    success: false,
+                    error: error.message
+                });
             }
         }
         
-        console.log(`Broadcast completed. Successful: ${successful}, Failed: ${failed}`);
-        
+        console.log(`Broadcast complete: ${successful} successful, ${failed} failed`);
         this.broadcast({
             type: 'broadcast_complete',
             successful,

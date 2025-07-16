@@ -14,51 +14,25 @@
 <body>
     <div class="container">
         <header>
-            <h1><i class="fab fa-whatsapp"></i> WhatsApp Broadcast Tool</h1>
-            <p>Kirim pesan broadcast ke semua kontak WhatsApp Anda</p>
+            <div class="header-bg">
+                <h1><i class="fab fa-whatsapp"></i> WhatsApp Broadcast Tool</h1>
+                <p>Kirim pesan broadcast ke semua kontak WhatsApp Anda</p>
+            </div>
         </header>
 
-        <div class="main-content">
-            <!-- Status Connection -->
-            <div class="status-card">
-                <h3><i class="fas fa-wifi"></i> Status Koneksi</h3>
-                <div id="connection-status" class="status-disconnected">
-                    <span class="status-indicator"></span>
-                    <span id="status-text">Tidak Terhubung</span>
-                </div>
-                <button id="connect-btn" class="btn btn-primary">
-                    <i class="fas fa-play"></i> Mulai Koneksi
-                </button>
-                <button id="logout-btn" class="btn btn-danger" style="display: none;">
-                    <i class="fas fa-sign-out-alt"></i> Logout
-                </button>
-            </div>
-
-            <!-- QR Code Section -->
-            <div id="qr-section" class="qr-card" style="display: none;">
-                <h3><i class="fas fa-qrcode"></i> Scan QR Code</h3>
-                <div id="qr-container" class="flex justify-center items-center border-4 border-green-500 rounded-lg p-4 bg-white shadow-lg">
-                    <div id="qr-placeholder" class="text-center">
-                        <i class="fas fa-qrcode text-4xl text-green-500"></i>
-                        <p class="text-gray-600">QR Code akan muncul di sini</p>
+        <div class="app-layout">
+            <!-- Sidebar for Contacts -->
+            <div class="contacts-sidebar">
+                <div class="sidebar-header">
+                    <h3><i class="fas fa-address-book"></i> Kontak</h3>
+                    <div class="sidebar-actions">
+                        <button id="refresh-contacts" class="btn-icon" title="Refresh">
+                            <i class="fas fa-sync-alt"></i>
+                        </button>
+                        <button id="import-csv" class="btn-icon" title="Import CSV">
+                            <i class="fas fa-upload"></i>
+                        </button>
                     </div>
-                </div>
-                <p class="qr-instruction">Buka WhatsApp di ponsel Anda dan scan QR code di atas</p>
-            </div>
-
-            <!-- Contact List -->
-            <div class="contacts-card">
-                <h3><i class="fas fa-address-book"></i> Daftar Kontak</h3>
-                <div class="contacts-header">
-                    <div class="contact-count">
-                        <span id="total-contacts">0</span> kontak ditemukan
-                    </div>
-                    <button id="refresh-contacts" class="btn btn-secondary">
-                        <i class="fas fa-sync-alt"></i> Refresh
-                    </button>
-                    <button id="import-csv" class="btn btn-secondary">
-                        <i class="fas fa-upload"></i> Import CSV
-                    </button>
                 </div>
                 <div class="contacts-filter">
                     <input type="text" id="search-contacts" placeholder="Cari kontak...">
@@ -69,57 +43,142 @@
                         </label>
                         <label>
                             <input type="checkbox" id="filter-saved" checked>
-                            Kontak Tersimpan
+                            Tersimpan
                         </label>
                         <label>
                             <input type="checkbox" id="filter-csv" checked>
-                            Kontak dari CSV
+                            CSV
                         </label>
                     </div>
+                </div>
+                <div class="contact-count">
+                    <span id="total-contacts">0</span> kontak
                 </div>
                 <div id="contacts-list" class="contacts-list">
                     <div class="no-contacts">
                         <i class="fas fa-users"></i>
-                        <p>Belum ada kontak. Pastikan WhatsApp sudah terhubung.</p>
+                        <p>Belum ada kontak</p>
                     </div>
                 </div>
             </div>
 
-            <!-- Message Composer -->
-            <div class="message-card">
-                <h3><i class="fas fa-paper-plane"></i> Pesan Broadcast</h3>
-                <div class="message-form">
-                    <textarea id="message-text" placeholder="Tulis pesan Anda di sini..." rows="5"></textarea>
-                    <div class="message-options">
-                        <label>
-                            <input type="checkbox" id="include-media">
-                            Sertakan Media
-                        </label>
-                        <input type="file" id="media-file" accept="image/*,video/*,audio/*" style="display: none;">
-                        <button id="select-media" class="btn btn-secondary" style="display: none;">
-                            <i class="fas fa-paperclip"></i> Pilih File
-                        </button>
+            <!-- Main Content Area -->
+            <div class="main-area">
+                <!-- Combined Status & QR Code -->
+                <div class="status-qr-card">
+                    <div class="status-section">
+                        <div class="status-info">
+                            <div id="connection-status" class="status-disconnected">
+                                <span class="status-indicator"></span>
+                                <span id="status-text">Tidak Terhubung</span>
+                            </div>
+                            <div class="status-actions">
+                                <button id="connect-btn" class="btn btn-primary" hidden>
+                                    <i class="fas fa-play"></i> Mulai Koneksi
+                                </button>
+                                <button id="logout-btn" class="btn btn-danger" style="display: none;">
+                                    <i class="fas fa-sign-out-alt"></i> Logout
+                                </button>
+                            </div>
+                        </div>
+                        <div class="warning-notice">
+                            <div class="warning-header">
+                                <i class="fas fa-exclamation-triangle"></i>
+                                <strong>Penting: Gunakan tool ini dengan bijak dan bertanggung jawab</strong>
+                            </div>
+                            <ol class="warning-list">
+                                <li>1. Jangan spam kontak dengan pesan yang tidak relevan</li>
+                                <li>2. Hormati privasi dan preferensi penerima</li>
+                                <li>3. Gunakan delay yang cukup antar pesan</li>
+                                <li>4. Patuhi terms of service WhatsApp</li>
+                                <li>5. Jangan gunakan untuk tujuan ilegal atau merugikan</li>
+                            </ol>
+                        </div>
                     </div>
-                    <div class="selected-contacts">
-                        <span id="selected-count">0</span> kontak dipilih
+                    <div id="qr-section" class="qr-section" style="display: none;">
+                        <!-- <h4><i class="fas fa-qrcode"></i> Scan QR Code dengan WhatsApp</h4> -->
+                        <div id="qr-container">
+                            <div id="qr-placeholder">
+                                <i class="fas fa-qrcode"></i>
+                                <p>QR Code akan muncul di sini</p>
+                            </div>
+                        </div>
                     </div>
-                    <button id="send-broadcast" class="btn btn-success" disabled>
-                        <i class="fas fa-broadcast-tower"></i> Kirim Broadcast
+                </div>
+
+                <!-- Modern Message Composer -->
+                <div class="message-composer">
+                    <div class="composer-header">
+                        <h3><i class="fas fa-paper-plane"></i> Pesan Broadcast</h3>
+                        <div class="selected-info">
+                            <span id="selected-count">0</span> kontak dipilih
+                        </div>
+                    </div>
+                    <div class="composer-body">
+                        <div class="message-input-area">
+                            <textarea id="message-text" placeholder="Tulis pesan broadcast Anda..." rows="6"></textarea>
+                        </div>
+                        <div class="media-section">
+                            <div class="media-toggle">
+                                <input type="checkbox" id="include-media" class="toggle-checkbox">
+                                <label for="include-media" class="toggle-label">
+                                    <span class="toggle-slider"></span>
+                                </label>
+                                <span class="toggle-text">Sertakan Media</span>
+                            </div>
+                            <div id="media-upload-area" class="media-upload" style="display: none;">
+                                <input type="file" id="media-file" accept="image/*,video/*,audio/*" style="display: none;">
+                                <div id="media-drop-zone" class="media-drop-zone">
+                                    <i class="fas fa-cloud-upload-alt"></i>
+                                    <p>Drag & drop file atau <span id="select-media" class="upload-link">pilih file</span></p>
+                                    <small>Mendukung gambar, video, dan audio</small>
+                                </div>
+                                <div id="media-preview" class="media-preview" style="display: none;"></div>
+                            </div>
+                        </div>
+                        <div class="composer-actions">
+                            <button id="send-broadcast" class="btn-send" disabled>
+                                <i class="fas fa-rocket"></i>
+                                <span>Kirim Broadcast</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Progress Popup Dialog -->
+        <div id="progress-modal" class="progress-modal" style="display: none;">
+            <div class="modal-overlay"></div>
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3><i class="fas fa-satellite-dish"></i> Mengirim Broadcast</h3>
+                    <button id="close-progress" class="btn-close">
+                        <i class="fas fa-times"></i>
                     </button>
                 </div>
-            </div>
-
-            <!-- Progress Section -->
-            <div id="progress-section" class="progress-card" style="display: none;">
-                <h3><i class="fas fa-chart-line"></i> Progress Pengiriman</h3>
-                <div class="progress-bar">
-                    <div id="progress-fill" class="progress-fill"></div>
+                <div class="modal-body">
+                    <div class="progress-circle">
+                        <svg class="progress-ring" width="120" height="120">
+                            <circle class="progress-ring-circle" stroke="#e2e8f0" stroke-width="8" fill="transparent" r="52" cx="60" cy="60"/>
+                            <circle id="progress-ring-fill" class="progress-ring-fill" stroke="#25D366" stroke-width="8" fill="transparent" r="52" cx="60" cy="60"/>
+                        </svg>
+                        <div class="progress-text">
+                            <span id="progress-percentage">0%</span>
+                        </div>
+                    </div>
+                    <div class="progress-stats">
+                        <div class="stat-item">
+                            <span class="stat-label">Progress:</span>
+                            <span id="progress-text">0 / 0</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-label">Status:</span>
+                            <span id="progress-status">Memulai...</span>
+                        </div>
+                    </div>
+                    <div id="progress-log" class="progress-log"></div>
                 </div>
-                <div class="progress-stats">
-                    <span id="progress-text">0 / 0</span>
-                    <span id="progress-percentage">0%</span>
-                </div>
-                <div id="progress-log" class="progress-log"></div>
             </div>
         </div>
     </div>
@@ -129,21 +188,24 @@
     <script src="script.js"></script>
 </body>
 </html>
-<div id="confirm-modal" class="hidden fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full flex items-center justify-center">
-    <div class="relative p-5 border w-96 shadow-lg rounded-md bg-white">
-        <div class="mt-3 text-center">
-            <h3 class="text-lg leading-6 font-medium text-gray-900">Konfirmasi Pengiriman</h3>
-            <div class="mt-2 px-7 py-3">
-                <p id="confirm-message" class="text-sm text-gray-500"></p>
-            </div>
-            <div class="items-center px-4 py-3">
-                <button id="confirm-ok" class="px-4 py-2 bg-blue-500 text-white text-base font-medium rounded-md w-20 mr-2 hover:bg-blue-600">
-                    OK
-                </button>
-                <button id="confirm-cancel" class="px-4 py-2 bg-gray-500 text-white text-base font-medium rounded-md w-20 hover:bg-gray-600">
-                    Cancel
-                </button>
+        <!-- Confirmation Modal -->
+        <div id="confirm-modal" class="confirm-modal" style="display: none;">
+            <div class="modal-overlay"></div>
+            <div class="modal-content confirm-content">
+                <div class="modal-header">
+                    <h3><i class="fas fa-question-circle"></i> Konfirmasi Pengiriman</h3>
+                </div>
+                <div class="modal-body">
+                    <p id="confirm-message"></p>
+                </div>
+                <div class="modal-footer">
+                    <button id="confirm-cancel" class="btn btn-secondary">
+                        <i class="fas fa-times"></i> Batal
+                    </button>
+                    <button id="confirm-ok" class="btn btn-primary">
+                        <i class="fas fa-check"></i> Kirim
+                    </button>
+                </div>
             </div>
         </div>
     </div>
-</div>

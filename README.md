@@ -108,6 +108,11 @@ const PORT = process.env.PORT || 3000;
 - Patuhi terms of service WhatsApp
 - Jangan gunakan untuk tujuan ilegal atau merugikan
 
+## Bug
+
+- Fitur import kontak dari CSV tidak berfungsi
+- Pengiriman pesan dengan media tidak berfungsi
+
 ## Lisensi
 
 Apache-2.0 License

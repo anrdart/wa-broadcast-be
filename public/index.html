@@ -37,10 +37,10 @@
             <!-- QR Code Section -->
             <div id="qr-section" class="qr-card" style="display: none;">
                 <h3><i class="fas fa-qrcode"></i> Scan QR Code</h3>
-                <div id="qr-container">
-                    <div id="qr-placeholder">
-                        <i class="fas fa-qrcode"></i>
-                        <p>QR Code akan muncul di sini</p>
+                <div id="qr-container" class="flex justify-center items-center border-4 border-green-500 rounded-lg p-4 bg-white shadow-lg">
+                    <div id="qr-placeholder" class="text-center">
+                        <i class="fas fa-qrcode text-4xl text-green-500"></i>
+                        <p class="text-gray-600">QR Code akan muncul di sini</p>
                     </div>
                 </div>
                 <p class="qr-instruction">Buka WhatsApp di ponsel Anda dan scan QR code di atas</p>
@@ -72,8 +72,8 @@
                             Kontak Tersimpan
                         </label>
                         <label>
-                            <input type="checkbox" id="filter-unsaved" checked>
-                            Nomor Tidak Tersimpan
+                            <input type="checkbox" id="filter-csv" checked>
+                            Kontak dari CSV
                         </label>
                     </div>
                 </div>
@@ -146,5 +146,4 @@
             </div>
         </div>
     </div>
-</body>
-</html>
+</div>

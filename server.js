@@ -1,3 +1,4 @@
+/* eslint-disable linebreak-style */
 const express = require('express');
 const http = require('http');
 const WebSocket = require('ws');
@@ -106,26 +107,94 @@ class WhatsAppBroadcastServer {
             try {
                 console.log(`Initializing WhatsApp client (attempt ${attempt})...`);
                 
-                this.whatsappClient = new Client({
-                    authStrategy: new LocalAuth({
-                        clientId: 'broadcast-client'
-                    }),
-                    puppeteer: {
-                        headless: true,
-                        args: [
-                            '--no-sandbox',
-                            '--disable-setuid-sandbox',
-                            '--disable-dev-shm-usage',
-                            '--disable-accelerated-2d-canvas',
-                            '--no-first-run',
-                            '--no-zygote',
-                            '--disable-gpu',
-                            '--disable-extensions',
-                            '--disable-component-extensions-with-background-pages',
-                            '--disable-default-apps',
-                            '--mute-audio'
-                        ]
+                // Load environment variables
+                require('dotenv').config();
+                
+                // Detect if running in production environment
+                const isProduction = process.env.NODE_ENV === 'production' || 
+                                   process.env.PORT || 
+                                   !process.env.DISPLAY;
+                
+                const puppeteerConfig = {
+                    headless: true,
+                    args: [
+                        '--no-sandbox',
+                        '--disable-setuid-sandbox',
+                        '--disable-dev-shm-usage',
+                        '--disable-accelerated-2d-canvas',
+                        '--no-first-run',
+                        '--no-zygote',
+                        '--disable-gpu',
+                        '--disable-extensions',
+                        '--disable-component-extensions-with-background-pages',
+                        '--disable-default-apps',
+                        '--mute-audio',
+                        '--disable-background-timer-throttling',
+                        '--disable-backgrounding-occluded-windows',
+                        '--disable-renderer-backgrounding',
+                        '--disable-features=TranslateUI',
+                        '--disable-ipc-flooding-protection'
+                    ]
+                };
+                
+                // Add production-specific configurations
+                if (isProduction) {
+                    puppeteerConfig.args.push(
+                        '--single-process', // Use single process in production
+                        '--no-zygote',
+                        '--disable-background-networking',
+                        '--disable-background-timer-throttling',
+                        '--disable-client-side-phishing-detection',
+                        '--disable-default-apps',
+                        '--disable-hang-monitor',
+                        '--disable-popup-blocking',
+                        '--disable-prompt-on-repost',
+                        '--disable-sync',
+                        '--disable-translate',
+                        '--disable-web-security',
+                        '--metrics-recording-only',
+                        '--no-first-run',
+                        '--safebrowsing-disable-auto-update',
+                        '--enable-automation',
+                        '--password-store=basic',
+                        '--use-mock-keychain'
+                    );
+                    
+                    // Try to use system Chrome if available
+                    const possibleChromePaths = [
+                        process.env.CHROME_PATH, // Custom path from environment
+                        '/usr/bin/google-chrome-stable',
+                        '/usr/bin/google-chrome',
+                        '/usr/bin/chromium-browser',
+                        '/usr/bin/chromium'
+                    ].filter(Boolean); // Remove undefined values
+                    
+                    for (const chromePath of possibleChromePaths) {
+                        try {
+                            const fs = require('fs');
+                            if (fs.existsSync(chromePath)) {
+                                puppeteerConfig.executablePath = chromePath;
+                                console.log(`Using system Chrome at: ${chromePath}`);
+                                break;
+                            }
+                        } catch (error) {
+                            // Continue to next path
+                        }
                     }
+                }
+                
+                // Configure auth strategy with custom session path if provided
+                const authConfig = {
+                    clientId: 'broadcast-client'
+                };
+                
+                if (process.env.SESSION_PATH) {
+                    authConfig.dataPath = process.env.SESSION_PATH;
+                }
+                
+                this.whatsappClient = new Client({
+                    authStrategy: new LocalAuth(authConfig),
+                    puppeteer: puppeteerConfig
                 });
                 
                 this.whatsappClient.on('qr', (qr) => {

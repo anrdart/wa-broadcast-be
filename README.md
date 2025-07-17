@@ -108,6 +108,123 @@ const PORT = process.env.PORT || 3000;
 - Patuhi terms of service WhatsApp
 - Jangan gunakan untuk tujuan ilegal atau merugikan
 
+## Deployment ke Production
+
+### Masalah Umum
+
+Jika aplikasi berjalan normal di localhost tetapi gagal terhubung di production server, kemungkinan penyebabnya:
+
+1. **Konfigurasi Puppeteer tidak sesuai untuk server production**
+2. **Missing dependencies Chrome/Chromium di server Linux**
+3. **Konfigurasi sandbox dan security yang berbeda**
+
+### Solusi Otomatis
+
+Proyek ini sudah dilengkapi dengan konfigurasi otomatis untuk production:
+
+- Deteksi environment production secara otomatis
+- Konfigurasi Puppeteer yang dioptimalkan untuk server
+- Auto-detect system Chrome/Chromium
+- Support untuk custom environment variables
+
+### Quick Setup untuk Production (Linux)
+
+1. **Jalankan script setup otomatis:**
+   ```bash
+   chmod +x setup-production.sh
+   ./setup-production.sh
+   ```
+
+2. **Atau setup manual:**
+   ```bash
+   # Install dependencies
+   sudo apt update
+   sudo apt install -y nodejs npm google-chrome-stable
+   
+   # Install project dependencies
+   npm install
+   
+   # Install PM2
+   npm install -g pm2
+   
+   # Start dengan PM2
+   npm run pm2:start
+   ```
+
+### Environment Variables
+
+Buat file `.env` dari template:
+```bash
+cp .env.example .env
+```
+
+Konfigurasi untuk production:
+```env
+NODE_ENV=production
+PORT=3000
+CHROME_PATH=/usr/bin/google-chrome-stable
+SESSION_PATH=/app/sessions
+```
+
+### Scripts NPM untuk Production
+
+```bash
+# Start production mode
+npm run prod
+
+# PM2 commands
+npm run pm2:start    # Start dengan PM2
+npm run pm2:stop     # Stop aplikasi
+npm run pm2:restart  # Restart aplikasi
+npm run pm2:logs     # Lihat logs
+npm run pm2:monit    # Monitor resource
+```
+
+## Troubleshooting
+
+### Error "Failed to launch browser process"
+
+**Penyebab:** Missing Chrome dependencies di server Linux
+
+**Solusi:**
+```bash
+# Install Chrome dependencies
+sudo apt install -y libnss3 libatk-bridge2.0-0 libdrm2 libxcomposite1 libxdamage1 libxrandr2 libgbm1 libxss1 libasound2
+
+# Install Chrome
+wget -q -O - https://dl.google.com/linux/linux_signing_key.pub | sudo apt-key add -
+echo "deb [arch=amd64] http://dl.google.com/linux/chrome/deb/ stable main" | sudo tee /etc/apt/sources.list.d/google-chrome.list
+sudo apt update && sudo apt install -y google-chrome-stable
+```
+
+### Error "No usable sandbox"
+
+**Solusi:** Sudah ditangani otomatis dengan flag `--no-sandbox` di production
+
+### Session Issues
+
+**Solusi:**
+```bash
+# Hapus session yang corrupt
+rm -rf .wwebjs_auth
+
+# Restart aplikasi
+npm run pm2:restart
+```
+
+### Memory Issues
+
+**Solusi:**
+- Gunakan server dengan minimal 2GB RAM
+- Monitor dengan `npm run pm2:monit`
+- Restart otomatis sudah dikonfigurasi di PM2
+
+## Dokumentasi Lengkap
+
+- [Panduan Deployment](./DEPLOYMENT_GUIDE.md) - Panduan lengkap deployment production
+- [Konfigurasi PM2](./ecosystem.config.js) - Konfigurasi process manager
+- [Setup Script](./setup-production.sh) - Script otomatis setup production
+
 ## Bug
 
 - Fitur import kontak dari CSV tidak berfungsi
@@ -119,3 +236,7 @@ Apache-2.0 License
 ## Kontribusi
 
 Kontribusi dan saran perbaikan sangat diterima. Silakan buat issue atau pull request.
+
+## Disclaimer
+
+Proyek ini menggunakan library unofficial WhatsApp Web.js. Tidak ada jaminan tidak akan di-block oleh WhatsApp. Gunakan dengan bijak dan sesuai Terms of Service WhatsApp.

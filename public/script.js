@@ -1,3 +1,4 @@
+/* eslint-disable linebreak-style */
 /* global QRCode, Papa */
 
 class WhatsAppBroadcastApp {

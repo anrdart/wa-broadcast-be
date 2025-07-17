@@ -124,6 +124,15 @@ const PORT = process.env.PORT || 3000;
 # Quick start
 npm run docker:compose:up
 
+# Rebuild (Windows)
+npm run docker:rebuild
+
+# Rebuild (PowerShell)
+npm run docker:rebuild:ps1
+
+# Rebuild (Linux/Mac)
+npm run docker:rebuild:bash
+
 # Manual build
 npm run docker:build
 npm run docker:run

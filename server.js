@@ -149,7 +149,47 @@ class WhatsAppBroadcastServer {
                         '--disable-backgrounding-occluded-windows',
                         '--disable-renderer-backgrounding',
                         '--disable-features=TranslateUI',
-                        '--disable-ipc-flooding-protection'
+                        '--disable-ipc-flooding-protection',
+                        // Additional Docker-specific flags
+                        '--disable-web-security',
+                        '--disable-features=VizDisplayCompositor',
+                        '--disable-breakpad',
+                        '--disable-canvas-aa',
+                        '--disable-2d-canvas-clip-aa',
+                        '--disable-gl-drawing-for-tests',
+                        '--disable-dev-shm-usage',
+                        '--no-zygote',
+                        '--use-gl=swiftshader',
+                        '--enable-webgl',
+                        '--hide-scrollbars',
+                        '--mute-audio',
+                        '--no-first-run',
+                        '--disable-infobars',
+                        '--disable-logging',
+                        '--disable-login-animations',
+                        '--disable-notifications',
+                        '--disable-gpu-sandbox',
+                        '--disable-software-rasterizer',
+                        '--disable-background-timer-throttling',
+                        '--disable-backgrounding-occluded-windows',
+                        '--disable-renderer-backgrounding',
+                        '--disable-field-trial-config',
+                        '--disable-back-forward-cache',
+                        '--disable-hang-monitor',
+                        '--disable-prompt-on-repost',
+                        '--disable-sync',
+                        '--disable-translate',
+                        '--metrics-recording-only',
+                        '--no-crash-upload',
+                        '--no-default-browser-check',
+                        '--no-pings',
+                        '--password-store=basic',
+                        '--use-mock-keychain',
+                        '--disable-component-update',
+                        '--disable-domain-reliability',
+                        '--disable-features=AudioServiceOutOfProcess,VizDisplayCompositor',
+                        '--enable-automation',
+                        '--disable-client-side-phishing-detection'
                     ]
                 };
                 
@@ -157,23 +197,9 @@ class WhatsAppBroadcastServer {
                 if (isProduction) {
                     puppeteerConfig.args.push(
                         '--single-process', // Use single process in production
-                        '--no-zygote',
                         '--disable-background-networking',
-                        '--disable-background-timer-throttling',
-                        '--disable-client-side-phishing-detection',
-                        '--disable-default-apps',
-                        '--disable-hang-monitor',
                         '--disable-popup-blocking',
-                        '--disable-prompt-on-repost',
-                        '--disable-sync',
-                        '--disable-translate',
-                        '--disable-web-security',
-                        '--metrics-recording-only',
-                        '--no-first-run',
-                        '--safebrowsing-disable-auto-update',
-                        '--enable-automation',
-                        '--password-store=basic',
-                        '--use-mock-keychain'
+                        '--safebrowsing-disable-auto-update'
                     );
                     
                     // Try to use system Chrome if available

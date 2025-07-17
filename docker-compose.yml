@@ -21,6 +21,9 @@ services:
       - seccomp:unconfined
     cap_add:
       - SYS_ADMIN
+    shm_size: 2gb
+    mem_limit: 2g
+    memswap_limit: 2g
     networks:
       - wa-network
 

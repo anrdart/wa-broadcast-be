@@ -1,12 +1,13 @@
 # Use Node.js 18 LTS as base image
 FROM node:18-slim
 
-# Install Chrome dependencies
+# Install Chrome dependencies and curl for health check
 RUN apt-get update && apt-get install -y \
     wget \
     gnupg \
     ca-certificates \
     procps \
+    curl \
     libxss1 \
     libasound2 \
     libatk-bridge2.0-0 \
@@ -17,6 +18,12 @@ RUN apt-get update && apt-get install -y \
     libgbm1 \
     libxkbcommon0 \
     libgtk-3-0 \
+    libnss3 \
+    libnspr4 \
+    libxcb1 \
+    libxfixes3 \
+    libxi6 \
+    libxtst6 \
     && rm -rf /var/lib/apt/lists/*
 
 # Install Google Chrome
@@ -32,8 +39,8 @@ WORKDIR /app
 # Copy package files
 COPY package*.json ./
 
-# Install dependencies
-RUN npm ci --only=production
+# Install dependencies (including dotenv which is now in dependencies)
+RUN npm install --production
 
 # Copy application code
 COPY . .
@@ -63,5 +70,5 @@ USER appuser
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
     CMD curl -f http://localhost:3000/health || exit 1
 
-# Start the application
-CMD ["npm", "start"]
+# Start the application with increased memory limits
+CMD ["node", "--max-old-space-size=2048", "server.js"]

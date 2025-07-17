@@ -108,9 +108,44 @@ const PORT = process.env.PORT || 3000;
 - Patuhi terms of service WhatsApp
 - Jangan gunakan untuk tujuan ilegal atau merugikan
 
-## Deployment ke Production
+## 🚀 Deployment & Production
 
-### Masalah Umum
+### ⚠️ PENTING: Masalah Vercel
+
+**Aplikasi ini TIDAK DAPAT di-deploy ke Vercel** karena:
+- Missing Chrome dependencies (`libnss3.so`, dll)
+- Serverless limitations untuk persistent connections
+- Memory & timeout constraints
+
+### ✅ Platform Deployment yang Didukung
+
+#### 1. **Docker (Recommended)**
+```bash
+# Quick start
+npm run docker:compose:up
+
+# Manual build
+npm run docker:build
+npm run docker:run
+```
+
+#### 2. **VPS/Dedicated Server**
+```bash
+# Auto setup (Ubuntu/Debian)
+npm run setup:prod
+
+# Manual PM2
+npm run pm2:start
+```
+
+#### 3. **Cloud Platforms**
+- DigitalOcean App Platform
+- Google Cloud Run
+- AWS ECS/Fargate
+- Railway
+- Render
+
+### Masalah Umum di Production
 
 Jika aplikasi berjalan normal di localhost tetapi gagal terhubung di production server, kemungkinan penyebabnya:
 

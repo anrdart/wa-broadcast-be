@@ -18,7 +18,17 @@
     "pm2:restart": "pm2 restart wa-broadcast",
     "pm2:logs": "pm2 logs wa-broadcast",
     "pm2:monit": "pm2 monit",
-    "setup:prod": "bash setup-production.sh"
+    "setup:prod": "bash setup-production.sh",
+    "docker:build": "docker build -t wa-broadcast .",
+    "docker:run": "docker run -d --name wa-broadcast -p 3000:3000 -v $(pwd)/sessions:/app/sessions -v $(pwd)/logs:/app/logs --security-opt seccomp:unconfined --cap-add SYS_ADMIN wa-broadcast",
+    "docker:stop": "docker stop wa-broadcast && docker rm wa-broadcast",
+    "docker:logs": "docker logs -f wa-broadcast",
+    "docker:compose:up": "docker-compose up -d",
+    "docker:compose:down": "docker-compose down",
+    "docker:compose:logs": "docker-compose logs -f",
+    "lint": "eslint . --ext .js",
+    "lint:fix": "eslint . --ext .js --fix",
+    "audit:fix": "npm audit fix"
   },
   "repository": {
     "type": "git",

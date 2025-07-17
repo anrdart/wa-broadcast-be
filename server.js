@@ -25,18 +25,34 @@ class WhatsAppBroadcastServer {
     setupExpress() {
         // Serve static files from public directory
         this.app.use(express.static(path.join(__dirname, 'public')));
+        this.app.use(express.json({ limit: '50mb' }));
+        
+        // Health check endpoint for Docker
+        this.app.get('/health', (req, res) => {
+            res.status(200).json({
+                status: 'ok',
+                timestamp: new Date().toISOString(),
+                uptime: process.uptime(),
+                memory: process.memoryUsage(),
+                whatsapp: {
+                    ready: this.isReady,
+                    qrSent: this.qrSent,
+                    contactsCount: this.contacts.length
+                }
+            });
+        });
         
         // Serve main page
         this.app.get('/', (req, res) => {
             res.sendFile(path.join(__dirname, 'public', 'index.html'));
         });
         
-        // Health check endpoint
-        this.app.get('/health', (req, res) => {
-            res.json({ 
-                status: 'ok', 
-                whatsapp: this.isReady ? 'connected' : 'disconnected',
-                contacts: this.contacts.length
+        // API routes
+        this.app.get('/api/status', (req, res) => {
+            res.json({
+                ready: this.isReady,
+                qrSent: this.qrSent,
+                contactsCount: this.contacts.length
             });
         });
     }

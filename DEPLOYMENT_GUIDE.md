@@ -1,5 +1,79 @@
 # Panduan Deployment WhatsApp Broadcast ke Production
 
+## ⚠️ PENTING: Masalah Deployment Vercel
+
+**Aplikasi ini TIDAK DAPAT di-deploy ke Vercel** karena:
+
+1. **Missing Chrome Dependencies**: Vercel serverless environment tidak memiliki dependencies yang diperlukan untuk Chrome/Puppeteer (`libnss3.so`, `libatk-bridge2.0-0`, dll)
+2. **Serverless Limitations**: WhatsApp Web.js membutuhkan persistent connection dan session storage yang tidak cocok dengan serverless functions
+3. **Memory & Timeout Limits**: Puppeteer membutuhkan resource yang lebih besar dari yang disediakan Vercel
+
+### Error yang Muncul di Vercel:
+```
+Error: Failed to launch the browser process!
+/vercel/path0/node_modules/whatsapp-web.js/node_modules/puppeteer-core/.local-chromium/linux-1045629/chrome-linux/chrome: error while loading shared libraries: libnss3.so: cannot open shared object file: No such file or directory
+```
+
+## ✅ Solusi Deployment yang Direkomendasikan
+
+### 1. **Docker Deployment (Recommended)**
+
+#### Quick Start dengan Docker Compose:
+```bash
+# Clone repository
+git clone <your-repo-url>
+cd wa-broadcast
+
+# Build dan jalankan
+npm run docker:compose:up
+
+# Monitor logs
+npm run docker:compose:logs
+
+# Jika ada masalah, rebuild container
+# Windows (Batch)
+npm run docker:rebuild
+
+# Windows (PowerShell)
+npm run docker:rebuild:ps1
+
+# Linux/Mac (Bash)
+npm run docker:rebuild:bash
+```
+
+#### Manual Docker Build:
+```bash
+# Build image
+docker build -t wa-broadcast .
+
+# Run container
+docker run -d \
+  --name wa-broadcast \
+  -p 3000:3000 \
+  -v $(pwd)/sessions:/app/sessions \
+  -v $(pwd)/logs:/app/logs \
+  --security-opt seccomp:unconfined \
+  --cap-add SYS_ADMIN \
+  wa-broadcast
+```
+
+### 2. **VPS/Dedicated Server**
+
+Untuk deployment di VPS (Ubuntu/Debian), gunakan script setup otomatis:
+```bash
+chmod +x setup-production.sh
+./setup-production.sh
+```
+
+### 3. **Cloud Platforms dengan Container Support**
+
+- **DigitalOcean App Platform** (dengan Dockerfile)
+- **Google Cloud Run** (dengan custom container)
+- **AWS ECS/Fargate**
+- **Azure Container Instances**
+- **Railway** (dengan Dockerfile)
+- **Render** (dengan Dockerfile)
+
 ## Masalah yang Sering Terjadi
 
 Ketika aplikasi WhatsApp Broadcast berjalan normal di localhost tetapi gagal terhubung di production server, masalahnya biasanya terkait dengan:
@@ -171,27 +245,91 @@ server {
 
 ## Troubleshooting
 
-### 1. Error "Failed to launch browser process"
+### 1. Error: "WSL ERROR: execvpe(/bin/bash) failed" (Windows)
+
+**Penyebab**: Script bash tidak dapat dijalankan di Windows PowerShell.
+
+**Solusi**:
+```bash
+# Gunakan script Windows (Batch)
+npm run docker:rebuild
+
+# Atau PowerShell
+npm run docker:rebuild:ps1
+
+# Atau manual
+docker-compose down
+docker-compose build --no-cache
+docker-compose up -d
+```
+
+**Penjelasan**: Tersedia 3 versi script rebuild untuk berbagai environment.
+
+### 2. Error: "Cannot find module 'dotenv'"
+
+**Penyebab**: Module dotenv tidak terinstall di production container.
+
+**Solusi**:
+```bash
+# Rebuild container dengan dependencies yang benar
+npm run docker:rebuild
+
+# Atau manual rebuild
+docker-compose down
+docker-compose build --no-cache
+docker-compose up -d
+```
+
+**Penjelasan**: Dotenv telah dipindahkan dari devDependencies ke dependencies di package.json.
+
+### 3. Error: "Protocol error (Network.setUserAgentOverride): Session closed"
+
+**Penyebab**: Chrome browser session ditutup secara prematur di lingkungan Docker karena konfigurasi yang tidak memadai.
+
+**Solusi**:
+```bash
+# Rebuild container dengan konfigurasi Chrome yang diperbaiki
+npm run docker:rebuild
+
+# Atau manual rebuild
+docker-compose down
+docker-compose build --no-cache
+docker-compose up -d
+```
+
+**Penjelasan**: 
+- Ditambahkan Chrome flags khusus Docker untuk stabilitas
+- Ditingkatkan shared memory size (2GB) di docker-compose.yml
+- Ditambahkan memory limits untuk mencegah crash
+- Menggunakan software rendering (swiftshader) untuk kompatibilitas
+
+### 4. Error "Failed to launch browser process"
 
 **Solusi:**
 - Pastikan semua dependencies Chrome sudah terinstall
 - Cek apakah Chrome/Chromium tersedia di sistem
 - Verifikasi permissions untuk user yang menjalankan aplikasi
 
-### 2. Error "No usable sandbox"
+```bash
+# Install missing dependencies
+sudo apt-get update
+sudo apt-get install -y libnss3 libatk-bridge2.0-0 libdrm2 libxcomposite1 libxdamage1 libxrandr2 libgbm1 libxss1 libasound2
+```
+
+### 5. Error "No usable sandbox"
 
 **Solusi:**
 - Argument `--no-sandbox` sudah ditambahkan
 - Jika masih error, coba jalankan dengan user yang memiliki privileges
 
-### 3. Memory Issues
+### 6. Memory Issues
 
 **Solusi:**
 - Gunakan instance dengan minimal 2GB RAM
 - Set `max_memory_restart` di PM2
 - Monitor penggunaan memory dengan `htop` atau `pm2 monit`
 
-### 4. Session Issues
+### 7. Session Issues
 
 **Solusi:**
 - Pastikan folder `.wwebjs_auth` memiliki permissions yang benar

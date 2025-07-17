@@ -1,44 +1,96 @@
 # WhatsApp Broadcast Tool
 
-Alat otomatisasi berbasis web untuk mengirimkan broadcast WhatsApp ke semua kontak, baik yang tersimpan maupun yang tidak tersimpan.
+Sebuah aplikasi web untuk mengirim pesan broadcast WhatsApp ke multiple kontak sekaligus dengan antarmuka yang user-friendly. Project ini telah dipisah menjadi frontend dan backend terpisah untuk deployment yang lebih fleksibel.
 
 ## Fitur
 
-- ✅ Interface web yang mudah digunakan
-- ✅ Koneksi WhatsApp Web melalui QR Code
-- ✅ Daftar semua kontak (tersimpan dan tidak tersimpan)
-- ✅ Filter dan pencarian kontak
-- ✅ Pilih kontak secara individual atau semua sekaligus
-- ✅ Kirim pesan teks dan media (gambar, video, dokumen)
-- ✅ Progress tracking pengiriman pesan
-- ✅ Delay otomatis antar pesan untuk menghindari spam
+- 🚀 Kirim pesan ke multiple kontak sekaligus
+- 📱 Integrasi dengan WhatsApp Web
+- 📎 Support untuk media (gambar, video, dokumen)
+- 📊 Progress tracking real-time
+- 📋 Import kontak dari CSV
+- 🔍 Filter dan pencarian kontak
+- 💾 Session management
+- 🐳 Docker support
+- 🔒 Secure authentication
+- 🌐 Frontend dan Backend terpisah
 
-## Persyaratan
+## Teknologi
 
-- Node.js versi 18.0.0 atau lebih baru
-- Browser modern (Chrome, Firefox, Edge)
-- Koneksi internet yang stabil
+- **Backend:** Node.js, Express, WebSocket, whatsapp-web.js
+- **Frontend:** HTML, CSS, JavaScript (Vanilla) - Static Web App
+- **Containerization:** Docker
+- **Process Management:** PM2
 
-## Instalasi
+## Struktur Project
 
-1. Pastikan semua dependencies sudah terinstall:
+```
+wa-broadcast-be/
+├── config/                  # Configuration files
+│   ├── ecosystem.config.js  # PM2 configuration
+│   ├── nginx.conf          # Nginx configuration
+│   └── nginx.production.conf
+├── scripts/                 # Deployment scripts
+│   ├── deploy-production.ps1
+│   ├── docker-rebuild.ps1
+│   └── quick-start.ps1
+├── src/                     # WhatsApp Web.js modules
+│   ├── authStrategies/     # Authentication strategies
+│   ├── factories/          # Factory classes
+│   ├── structures/         # WhatsApp data structures
+│   ├── util/               # Utility functions
+│   ├── webCache/           # Web cache implementations
+│   └── Client.js           # Main WhatsApp client
+├── utils/                   # Utility scripts
+│   ├── test-api.js         # API testing
+│   ├── test-backend-connection.js
+│   └── check-environment.js
+├── logs/                    # Application logs
+├── sessions/                # WhatsApp sessions
+```
+
+## Quick Start
+
+### Development
+
+1. **Clone repository:**
+   ```bash
+   git clone <repository-url>
+   cd wa-broadcast-be
+   ```
+
+2. **Install dependencies:**
    ```bash
    npm install
    ```
 
-2. Jalankan server:
+3. **Setup environment:**
    ```bash
-   npm start
-   ```
-   
-   Atau untuk development dengan auto-reload:
-   ```bash
-   npm run dev
+   cp .env.example .env
+   # Edit .env file with your configuration
    ```
 
-3. Buka browser dan akses:
+4. **Start development server:**
+   ```bash
+   npm run dev
+   # Server berjalan di http://localhost:3000
    ```
-   http://localhost:3000
+
+5. **Scan QR code dengan WhatsApp dan mulai broadcast!**
+
+### Option 2: Deploy Terpisah (Recommended)
+
+1. **Deploy Backend** (VPS/Cloud/Railway/Heroku):
+   ```bash
+   cd backend
+   # Follow backend/README.md
+   ```
+
+2. **Deploy Frontend** (Vercel/Netlify/GitHub Pages):
+   ```bash
+   cd frontend
+   # Update backend URL di script.js
+   # Follow frontend/README.md
    ```
 
 ## Cara Penggunaan

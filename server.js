@@ -1,4 +1,5 @@
 /* eslint-disable linebreak-style */
+require('dotenv').config();
 const express = require('express');
 const http = require('http');
 const WebSocket = require('ws');
@@ -23,9 +24,10 @@ class WhatsAppBroadcastServer {
     }
 
     setupExpress() {
-        // Serve static files from public directory
-        this.app.use(express.static(path.join(__dirname, 'public')));
         this.app.use(express.json({ limit: '50mb' }));
+        
+        // Serve static files from wa-broadcast directory
+        this.app.use(express.static(path.join(__dirname, 'wa-broadcast')));
         
         // Health check endpoint for Docker
         this.app.get('/health', (req, res) => {
@@ -42,11 +44,6 @@ class WhatsAppBroadcastServer {
             });
         });
         
-        // Serve main page
-        this.app.get('/', (req, res) => {
-            res.sendFile(path.join(__dirname, 'public', 'index.html'));
-        });
-        
         // API routes
         this.app.get('/api/status', (req, res) => {
             res.json({
@@ -54,6 +51,15 @@ class WhatsAppBroadcastServer {
                 qrSent: this.qrSent,
                 contactsCount: this.contacts.length
             });
+        });
+        
+        // Fallback route for SPA - serve index.html for all non-API routes
+        this.app.get('*', (req, res) => {
+            // Skip API routes and static files
+            if (req.path.startsWith('/api/') || req.path.startsWith('/ws') || req.path.startsWith('/health')) {
+                return res.status(404).json({ error: 'Not found' });
+            }
+            res.sendFile(path.join(__dirname, 'wa-broadcast', 'index.html'));
         });
     }
 
@@ -126,11 +132,11 @@ class WhatsAppBroadcastServer {
                 // Load environment variables
                 require('dotenv').config();
                 
-                // Detect if running in production environment
-                const isProduction = process.env.NODE_ENV === 'production' || 
-                                   process.env.PORT || 
-                                   !process.env.DISPLAY;
+                // Detect environment
+                const isReplit = process.env.REPL_ID || process.env.REPL_SLUG;
+                const isProduction = process.env.NODE_ENV === 'production' || process.env.PORT;
                 
+                // Replit-optimized Puppeteer configuration
                 const puppeteerConfig = {
                     headless: true,
                     args: [
@@ -150,29 +156,21 @@ class WhatsAppBroadcastServer {
                         '--disable-renderer-backgrounding',
                         '--disable-features=TranslateUI',
                         '--disable-ipc-flooding-protection',
-                        // Additional Docker-specific flags
                         '--disable-web-security',
                         '--disable-features=VizDisplayCompositor',
                         '--disable-breakpad',
                         '--disable-canvas-aa',
                         '--disable-2d-canvas-clip-aa',
                         '--disable-gl-drawing-for-tests',
-                        '--disable-dev-shm-usage',
-                        '--no-zygote',
                         '--use-gl=swiftshader',
                         '--enable-webgl',
                         '--hide-scrollbars',
-                        '--mute-audio',
-                        '--no-first-run',
                         '--disable-infobars',
                         '--disable-logging',
                         '--disable-login-animations',
                         '--disable-notifications',
                         '--disable-gpu-sandbox',
                         '--disable-software-rasterizer',
-                        '--disable-background-timer-throttling',
-                        '--disable-backgrounding-occluded-windows',
-                        '--disable-renderer-backgrounding',
                         '--disable-field-trial-config',
                         '--disable-back-forward-cache',
                         '--disable-hang-monitor',
@@ -192,6 +190,26 @@ class WhatsAppBroadcastServer {
                         '--disable-client-side-phishing-detection'
                     ]
                 };
+                
+                // Replit-specific optimizations
+                if (isReplit) {
+                    puppeteerConfig.args.push(
+                        '--single-process',
+                        '--disable-background-networking',
+                        '--disable-popup-blocking',
+                        '--disable-background-timer-throttling',
+                        '--disable-renderer-backgrounding',
+                        '--disable-backgrounding-occluded-windows',
+                        '--memory-pressure-off'
+                    );
+                    
+                    // Use system Chromium in Replit
+                    if (process.env.PUPPETEER_EXECUTABLE_PATH) {
+                        puppeteerConfig.executablePath = process.env.PUPPETEER_EXECUTABLE_PATH;
+                    } else if (process.env.CHROME_PATH) {
+                        puppeteerConfig.executablePath = process.env.CHROME_PATH;
+                    }
+                }
                 
                 // Add production-specific configurations
                 if (isProduction) {
@@ -460,7 +478,9 @@ class WhatsAppBroadcastServer {
 
     start(port = 3000) {
         this.server.listen(port, () => {
-            console.log(`WhatsApp Broadcast Server running on http://localhost:${port}`);
+            // Use API_BASE_URL if available, otherwise fallback to localhost
+            const baseUrl = process.env.API_BASE_URL || `http://localhost:${port}`;
+            console.log(`WhatsApp Broadcast Server running on ${baseUrl}`);
             console.log('Open your browser and navigate to the URL above to use the application.');
         });
     }

@@ -1,5 +1,5 @@
 # Logs
-logs/
+logs
 *.log
 npm-debug.log*
 yarn-debug.log*
@@ -7,16 +7,8 @@ yarn-error.log*
 lerna-debug.log*
 .pnpm-debug.log*
 
-# WhatsApp Sessions
-sessions/
-.wwebjs_auth/
-.wwebjs_cache/
-
-# Environment files
-.env
-.env.local
-.env.production
-.env.development
+# Diagnostic reports (https://nodejs.org/api/report.html)
+report.[0-9]*.[0-9]*.[0-9]*.[0-9]*.json
 
 # Runtime data
 pids
@@ -34,7 +26,7 @@ coverage
 # nyc test coverage
 .nyc_output
 
-# Grunt intermediate storage (http://gruntjs.com/creating-plugins#storing-task-files)
+# Grunt intermediate storage (https://gruntjs.com/creating-plugins#storing-task-files)
 .grunt
 
 # Bower dependency directory (https://bower.io/)
@@ -80,12 +72,12 @@ web_modules/
 # Yarn Integrity file
 .yarn-integrity
 
-# dotenv environment variables file
+# dotenv environment variable files
 .env
-.env.local
 .env.development.local
 .env.test.local
 .env.production.local
+.env.local
 
 # parcel-bundler cache (https://parceljs.org/)
 .cache
@@ -101,7 +93,9 @@ dist
 
 # Gatsby files
 .cache/
-public
+# Comment in the public line in if your project uses Gatsby and not Next.js
+# https://nextjs.org/blog/next-9-1#public-directory-support
+# public
 
 # vuepress build output
 .vuepress/dist
@@ -136,21 +130,28 @@ public
 .pnp.*
 
 # WhatsApp Web.js session data
+sessions/
 .wwebjs_auth/
 .wwebjs_cache/
-sessions/
+cache/
+puppeteer-cache/
 
-# PM2 logs and dumps
-.pm2/
-pids/
-logs/
-*.log
+# PM2 logs
+pm2-logs/
 
-# Puppeteer cache
-.cache/
-puppeteer/
+# Docker (not needed for Replit)
+.dockerignore
+Dockerfile*
+docker-compose*.yml
 
-# OS generated files
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
 .DS_Store
 .DS_Store?
 ._*
@@ -159,44 +160,21 @@ puppeteer/
 ehthumbs.db
 Thumbs.db
 
-# Windows
-Desktop.ini
-$RECYCLE.BIN/
+# Replit specific
+.replit_zip_error_log
+.breakpoints
+.upm/
+replit.nix.bak
+CHANGELOG.md
+DEPLOYMENT_GUIDE.md
+FRONTEND.INTEGRATION.md
+wa-broadcast
+README_REPLIT.md
 
-# Linux
-*~
+# Keep template files but ignore actual env
+!.env.replit
 
-# Temporary files
-*.tmp
-*.temp
-*.swp
-*.swo
-*~
-
-# IDE files
-.vscode/
-.idea/
-*.sublime-project
-*.sublime-workspace
-
-# Backup files
-*.bak
-*.backup
-*.old
-
-# SSL certificates
-*.pem
-*.key
-*.crt
-*.csr
-
-# Database files
-*.db
-*.sqlite
-*.sqlite3
-
-# Archive files
-*.zip
-*.tar.gz
-*.rar
-*.7z
+# Monitoring logs (keep structure but ignore content)
+logs/*.log
+logs/*.old
+!logs/.gitkeep

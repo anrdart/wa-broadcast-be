@@ -100,6 +100,7 @@ try {
         Write-Host "  - Backend API: http://localhost:3000" -ForegroundColor White
         Write-Host "  - Health Check: http://localhost:3000/health" -ForegroundColor White
         Write-Host "  - Nginx Proxy: http://localhost:80" -ForegroundColor White
+        Write-Host "  - Production Domain: https://wa-broadcast.ekalliptus.my.id" -ForegroundColor Green
         
         Write-Host ""
         Write-Status "Useful Commands:"
@@ -110,9 +111,9 @@ try {
         Write-Host ""
         Write-Success "Deployment completed successfully! 🎉"
         Write-Warning "Don't forget to:"
-        Write-Host "  1. Update FRONTEND_URL in .env with your Vercel domain" -ForegroundColor Yellow
-        Write-Host "  2. Update CORS origins in nginx.production.conf" -ForegroundColor Yellow
-        Write-Host "  3. Configure SSL certificates for HTTPS (if needed)" -ForegroundColor Yellow
+        Write-Host "  1. Configure SSL certificates in ssl/ directory for HTTPS" -ForegroundColor Yellow
+        Write-Host "  2. Point domain wa-broadcast.ekalliptus.my.id to this server" -ForegroundColor Yellow
+        Write-Host "  3. Test HTTPS access after SSL setup" -ForegroundColor Yellow
         
         # Test health endpoint
         Write-Status "Testing health endpoint..."

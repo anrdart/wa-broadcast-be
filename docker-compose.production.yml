@@ -1,0 +1,60 @@
+services:
+  wa-broadcast:
+    build: .
+    container_name: wa-broadcast-app
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      - PORT=3000
+      - API_BASE_URL=https://wa-broadcast.ekalliptus.my.id
+      - PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true
+      - PUPPETEER_EXECUTABLE_PATH=/usr/bin/google-chrome-stable
+      - CHROME_PATH=/usr/bin/google-chrome-stable
+    volumes:
+      - ./sessions:/app/sessions
+      - ./logs:/app/logs
+      - /dev/shm:/dev/shm
+    restart: unless-stopped
+    security_opt:
+      - seccomp:unconfined
+    cap_add:
+      - SYS_ADMIN
+    shm_size: 2gb
+    mem_limit: 2g
+    memswap_limit: 2g
+    networks:
+      - wa-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # Nginx reverse proxy for production
+  nginx:
+    image: nginx:alpine
+    container_name: wa-broadcast-nginx
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./config/nginx.production.conf:/etc/nginx/nginx.conf:ro
+      - ./ssl:/etc/nginx/ssl:ro
+    depends_on:
+      wa-broadcast:
+        condition: service_healthy
+    restart: unless-stopped
+    networks:
+      - wa-network
+
+networks:
+  wa-network:
+    driver: bridge
+
+volumes:
+  sessions:
+    driver: local
+  logs:
+    driver: local

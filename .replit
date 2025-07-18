@@ -12,6 +12,11 @@ externalPort = 80
 NODE_ENV = "production"
 PORT = "3000"
 PUPPETEER_SKIP_CHROMIUM_DOWNLOAD = "true"
+<<<<<<< HEAD
+=======
+PUPPETEER_EXECUTABLE_PATH = "/nix/store/nmmgwk1a0cakhmhwgf1v2b5ws3zf899h-chromium-130.0.6723.116/bin/chromium"
+CHROME_PATH = "/nix/store/nmmgwk1a0cakhmhwgf1v2b5ws3zf899h-chromium-130.0.6723.116/bin/chromium"
+>>>>>>> dcc5f2282845f1be17abbc355b93f4c32a8a866d
 DISPLAY = ":99"
 NODE_OPTIONS = "--max-old-space-size=512"
 
@@ -33,4 +38,8 @@ start = "typescript-language-server --stdio"
 requiredFiles = [".replit", "replit.nix"]
 
 [run]
+<<<<<<< HEAD
 command = "npm run replit:start"
+=======
+command = "npm start"
+>>>>>>> dcc5f2282845f1be17abbc355b93f4c32a8a866d

@@ -1,3 +1,5 @@
+/* eslint-disable linebreak-style */
+require('dotenv').config();
 const express = require('express');
 const http = require('http');
 const WebSocket = require('ws');
@@ -22,21 +24,42 @@ class WhatsAppBroadcastServer {
     }
 
     setupExpress() {
-        // Serve static files from public directory
-        this.app.use(express.static(path.join(__dirname, 'public')));
+        this.app.use(express.json({ limit: '50mb' }));
         
-        // Serve main page
-        this.app.get('/', (req, res) => {
-            res.sendFile(path.join(__dirname, 'public', 'index.html'));
+        // Serve static files from wa-broadcast directory
+        this.app.use(express.static(path.join(__dirname, 'wa-broadcast')));
+        
+        // Health check endpoint for Docker
+        this.app.get('/health', (req, res) => {
+            res.status(200).json({
+                status: 'ok',
+                timestamp: new Date().toISOString(),
+                uptime: process.uptime(),
+                memory: process.memoryUsage(),
+                whatsapp: {
+                    ready: this.isReady,
+                    qrSent: this.qrSent,
+                    contactsCount: this.contacts.length
+                }
+            });
         });
         
-        // Health check endpoint
-        this.app.get('/health', (req, res) => {
-            res.json({ 
-                status: 'ok', 
-                whatsapp: this.isReady ? 'connected' : 'disconnected',
-                contacts: this.contacts.length
+        // API routes
+        this.app.get('/api/status', (req, res) => {
+            res.json({
+                ready: this.isReady,
+                qrSent: this.qrSent,
+                contactsCount: this.contacts.length
             });
+        });
+        
+        // Fallback route for SPA - serve index.html for all non-API routes
+        this.app.get('*', (req, res) => {
+            // Skip API routes and static files
+            if (req.path.startsWith('/api/') || req.path.startsWith('/ws') || req.path.startsWith('/health')) {
+                return res.status(404).json({ error: 'Not found' });
+            }
+            res.sendFile(path.join(__dirname, 'wa-broadcast', 'index.html'));
         });
     }
 
@@ -106,26 +129,156 @@ class WhatsAppBroadcastServer {
             try {
                 console.log(`Initializing WhatsApp client (attempt ${attempt})...`);
                 
-                this.whatsappClient = new Client({
-                    authStrategy: new LocalAuth({
-                        clientId: 'broadcast-client'
-                    }),
-                    puppeteer: {
-                        headless: true,
-                        args: [
-                            '--no-sandbox',
-                            '--disable-setuid-sandbox',
-                            '--disable-dev-shm-usage',
-                            '--disable-accelerated-2d-canvas',
-                            '--no-first-run',
-                            '--no-zygote',
-                            '--disable-gpu',
-                            '--disable-extensions',
-                            '--disable-component-extensions-with-background-pages',
-                            '--disable-default-apps',
-                            '--mute-audio'
-                        ]
+                // Load environment variables
+                require('dotenv').config();
+                
+                // Detect environment
+                const isReplit = process.env.REPL_ID || process.env.REPL_SLUG;
+                const isProduction = process.env.NODE_ENV === 'production' || process.env.PORT;
+                
+                // Replit-optimized Puppeteer configuration
+                const puppeteerConfig = {
+                    headless: true,
+                    args: [
+                        '--no-sandbox',
+                        '--disable-setuid-sandbox',
+                        '--disable-dev-shm-usage',
+                        '--disable-accelerated-2d-canvas',
+                        '--no-first-run',
+                        '--no-zygote',
+                        '--disable-gpu',
+                        '--disable-extensions',
+                        '--disable-component-extensions-with-background-pages',
+                        '--disable-default-apps',
+                        '--mute-audio',
+                        '--disable-background-timer-throttling',
+                        '--disable-backgrounding-occluded-windows',
+                        '--disable-renderer-backgrounding',
+                        '--disable-features=TranslateUI',
+                        '--disable-ipc-flooding-protection',
+                        '--disable-web-security',
+                        '--disable-features=VizDisplayCompositor',
+                        '--disable-breakpad',
+                        '--disable-canvas-aa',
+                        '--disable-2d-canvas-clip-aa',
+                        '--disable-gl-drawing-for-tests',
+                        '--use-gl=swiftshader',
+                        '--enable-webgl',
+                        '--hide-scrollbars',
+                        '--disable-infobars',
+                        '--disable-logging',
+                        '--disable-login-animations',
+                        '--disable-notifications',
+                        '--disable-gpu-sandbox',
+                        '--disable-software-rasterizer',
+                        '--disable-field-trial-config',
+                        '--disable-back-forward-cache',
+                        '--disable-hang-monitor',
+                        '--disable-prompt-on-repost',
+                        '--disable-sync',
+                        '--disable-translate',
+                        '--metrics-recording-only',
+                        '--no-crash-upload',
+                        '--no-default-browser-check',
+                        '--no-pings',
+                        '--password-store=basic',
+                        '--use-mock-keychain',
+                        '--disable-component-update',
+                        '--disable-domain-reliability',
+                        '--disable-features=AudioServiceOutOfProcess,VizDisplayCompositor',
+                        '--enable-automation',
+                        '--disable-client-side-phishing-detection'
+                    ]
+                };
+                
+                // Replit-specific optimizations
+                if (isReplit) {
+                    puppeteerConfig.args.push(
+                        '--single-process',
+                        '--disable-background-networking',
+                        '--disable-popup-blocking',
+                        '--disable-background-timer-throttling',
+                        '--disable-renderer-backgrounding',
+                        '--disable-backgrounding-occluded-windows',
+                        '--memory-pressure-off'
+                    );
+                    
+                    // Dynamically find Chromium in Replit
+                    const findChromiumPath = () => {
+                        const { execSync } = require('child_process');
+                        try {
+                            // Try to find Chromium in Nix store
+                            const nixChromium = execSync('find /nix/store -name "chromium" -type f -executable 2>/dev/null | head -1', { encoding: 'utf8' }).trim();
+                            if (nixChromium && require('fs').existsSync(nixChromium)) {
+                                console.log(`Using Chromium from Nix store: ${nixChromium}`);
+                                return nixChromium;
+                            }
+                        } catch (error) {
+                            console.log('Could not find Chromium in Nix store, trying environment variables...');
+                        }
+                        
+                        // Fallback to environment variables
+                        if (process.env.PUPPETEER_EXECUTABLE_PATH) {
+                            return process.env.PUPPETEER_EXECUTABLE_PATH;
+                        } else if (process.env.CHROME_PATH) {
+                            return process.env.CHROME_PATH;
+                        }
+                        
+                        return null;
+                    };
+                    
+                    const chromiumPath = findChromiumPath();
+                    if (chromiumPath) {
+                        puppeteerConfig.executablePath = chromiumPath;
+                    } else {
+                        console.warn('⚠️  Could not find Chromium executable. WhatsApp client may fail to initialize.');
                     }
+                }
+                
+                // Add production-specific configurations
+                if (isProduction) {
+                    puppeteerConfig.args.push(
+                        '--single-process', // Use single process in production
+                        '--disable-background-networking',
+                        '--disable-popup-blocking',
+                        '--safebrowsing-disable-auto-update'
+                    );
+                    
+                    // Try to use system Chrome if available
+                    const possibleChromePaths = [
+                        process.env.CHROME_PATH, // Custom path from environment
+                        '/usr/bin/google-chrome-stable',
+                        '/usr/bin/google-chrome',
+                        '/usr/bin/chromium-browser',
+                        '/usr/bin/chromium'
+                    ].filter(Boolean); // Remove undefined values
+                    
+                    for (const chromePath of possibleChromePaths) {
+                        try {
+                            const fs = require('fs');
+                            if (fs.existsSync(chromePath)) {
+                                puppeteerConfig.executablePath = chromePath;
+                                console.log(`Using system Chrome at: ${chromePath}`);
+                                break;
+                            }
+                        } catch (error) {
+                            // Continue to next path
+                        }
+                    }
+                }
+                
+                // Configure auth strategy with custom session path if provided
+                const authConfig = {
+                    clientId: 'broadcast-client'
+                };
+                
+                if (process.env.SESSION_PATH) {
+                    authConfig.dataPath = process.env.SESSION_PATH;
+                }
+                
+                this.whatsappClient = new Client({
+                    authStrategy: new LocalAuth(authConfig),
+                    puppeteer: puppeteerConfig
                 });
                 
                 this.whatsappClient.on('qr', (qr) => {
@@ -349,7 +502,9 @@ class WhatsAppBroadcastServer {
 
     start(port = 3000) {
         this.server.listen(port, () => {
-            console.log(`WhatsApp Broadcast Server running on http://localhost:${port}`);
+            // Use API_BASE_URL if available, otherwise fallback to localhost
+            const baseUrl = process.env.API_BASE_URL || `http://localhost:${port}`;
+            console.log(`WhatsApp Broadcast Server running on ${baseUrl}`);
             console.log('Open your browser and navigate to the URL above to use the application.');
         });
     }

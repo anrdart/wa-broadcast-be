@@ -1,70 +1,73 @@
 {
-  "name": "whatsapp-web.js",
-  "version": "1.31.0",
-  "description": "Library for interacting with the WhatsApp Web API ",
-  "main": "./index.js",
-  "typings": "./index.d.ts",
+  "name": "wa-broadcast-backend",
+  "version": "1.2.1",
+  "description": "WhatsApp Broadcast Backend API Server",
+  "main": "server.js",
   "scripts": {
-    "test": "mocha tests --recursive --timeout 5000",
-    "test-single": "mocha",
-    "shell": "node --experimental-repl-await ./shell.js",
-    "generate-docs": "npx jsdoc --configure .jsdoc.json --verbose",
     "start": "node server.js",
     "dev": "nodemon server.js",
-    "broadcast": "node server.js",
+    "prod": "NODE_ENV=production node server.js",
     "replit:setup": "node deploy-replit.js",
     "replit:start": "npm run replit:setup && npm start",
-    "replit:dev": "npm run replit:setup && npm run dev"
+    "replit:dev": "npm run replit:setup && npm run dev",
+    "pm2:start": "pm2 start config/ecosystem.config.js --env production",
+    "pm2:stop": "pm2 stop wa-broadcast",
+    "pm2:restart": "pm2 restart wa-broadcast",
+    "pm2:logs": "pm2 logs wa-broadcast",
+    "pm2:monit": "pm2 monit",
+    "docker:build": "docker build -t wa-broadcast .",
+    "docker:run": "docker run -d --name wa-broadcast -p 3000:3000 -v $(pwd)/sessions:/app/sessions -v $(pwd)/logs:/app/logs --security-opt seccomp:unconfined --cap-add SYS_ADMIN wa-broadcast",
+    "docker:stop": "docker stop wa-broadcast && docker rm wa-broadcast",
+    "docker:logs": "docker logs -f wa-broadcast",
+    "docker:compose:up": "docker-compose up -d",
+    "docker:compose:down": "docker-compose down",
+    "docker:compose:logs": "docker-compose logs -f",
+    "docker:compose:build": "docker-compose build --no-cache",
+    "docker:rebuild": "scripts/docker-rebuild.bat",
+    "docker:rebuild:ps1": "powershell -ExecutionPolicy Bypass -File scripts/docker-rebuild.ps1",
+    "docker:rebuild:bash": "bash scripts/docker-rebuild.sh",
+    "docker:health": "curl -f http://localhost:3000/health || echo 'Health check failed'",
+    "docker:health:win": "powershell -Command \"try { Invoke-RestMethod -Uri http://localhost:3000/health } catch { Write-Host 'Health check failed' }\"",
+    "lint": "eslint . --ext .js",
+    "lint:fix": "eslint . --ext .js --fix",
+    "audit:fix": "npm audit fix",
+    "deploy:production": "powershell -ExecutionPolicy Bypass -File scripts/deploy-production.ps1",
+    "deploy:quick": "powershell -ExecutionPolicy Bypass -File scripts/quick-start.ps1",
+    "test:api": "node utils/test-api.js",
+    "test:connection": "node utils/test-backend-connection.js",
+    "check:env": "node utils/check-environment.js"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/pedroslopez/whatsapp-web.js.git"
+    "url": "git+https://github.com/your-username/wa-broadcast-be.git"
   },
   "keywords": [
     "whatsapp",
     "whatsapp-web",
     "api",
     "bot",
-    "client",
-    "node"
+    "backend",
+    "broadcast",
+    "nodejs"
   ],
-  "author": "Pedro Lopez",
-  "license": "Apache-2.0",
+  "author": "Your Name",
+  "license": "MIT",
   "bugs": {
-    "url": "https://github.com/pedroslopez/whatsapp-web.js/issues"
+    "url": "https://github.com/your-username/wa-broadcast-be/issues"
   },
-  "homepage": "https://wwebjs.dev/",
+  "homepage": "https://github.com/your-username/wa-broadcast-be#readme",
   "dependencies": {
-    "@pedroslopez/moduleraid": "^5.0.2",
     "express": "^4.18.2",
-    "fluent-ffmpeg": "2.1.3",
-    "mime": "^4.0.7",
-    "node-fetch": "^2.6.9",
-    "node-webpmux": "3.1.7",
-    "puppeteer": "^24.13.0",
-    "qrcode": "^1.5.4",
+    "ws": "^8.14.2",
     "whatsapp-web.js": "^1.31.0",
-    "ws": "^8.14.2"
+    "qrcode-terminal": "^0.12.0",
+    "dotenv": "^17.2.0"
   },
   "devDependencies": {
-    "@types/node-fetch": "^2.5.12",
-    "chai": "^4.3.4",
-    "chai-as-promised": "^8.0.1",
-    "dotenv": "^17.2.0",
-    "eslint": "^8.4.1",
-    "eslint-plugin-mocha": "^10.0.3",
-    "jsdoc": "^3.6.4",
-    "jsdoc-baseline": "^0.1.5",
-    "mocha": "^11.7.1",
     "nodemon": "^3.0.1",
-    "sinon": "^13.0.1"
+    "eslint": "^8.50.0"
   },
   "engines": {
     "node": ">=18.0.0"
-  },
-  "optionalDependencies": {
-    "archiver": "^5.3.1",
-    "fs-extra": "^10.1.0",
-    "unzipper": "^0.10.11"
   }
 }

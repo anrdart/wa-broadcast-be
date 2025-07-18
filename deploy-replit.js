@@ -86,6 +86,21 @@ function checkDependencies() {
 function checkChromium() {
     log('🌐 Checking Chromium installation...', 'blue');
     
+    const { execSync } = require('child_process');
+    
+    // Try to find Chromium in Nix store first (Replit)
+    try {
+        const nixChromium = execSync('find /nix/store -name "chromium" -type f -executable 2>/dev/null | head -1', { encoding: 'utf8' }).trim();
+        if (nixChromium && fs.existsSync(nixChromium)) {
+            log(`✅ Chromium found in Nix store: ${nixChromium}`, 'green');
+            process.env.PUPPETEER_EXECUTABLE_PATH = nixChromium;
+            process.env.CHROME_PATH = nixChromium;
+            return;
+        }
+    } catch (error) {
+        // Fallback to standard paths
+    }
+    
     const chromiumPaths = [
         '/usr/bin/chromium',
         '/usr/bin/chromium-browser',
@@ -107,6 +122,7 @@ function checkChromium() {
     if (!chromiumFound) {
         log('⚠️  Chromium not found in standard locations', 'yellow');
         log('   Make sure Chromium is installed via replit.nix', 'yellow');
+        log('   You may need to restart the Repl after adding Chromium', 'yellow');
     }
 }
 

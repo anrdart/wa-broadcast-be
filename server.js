@@ -203,11 +203,35 @@ class WhatsAppBroadcastServer {
                         '--memory-pressure-off'
                     );
                     
-                    // Use system Chromium in Replit
-                    if (process.env.PUPPETEER_EXECUTABLE_PATH) {
-                        puppeteerConfig.executablePath = process.env.PUPPETEER_EXECUTABLE_PATH;
-                    } else if (process.env.CHROME_PATH) {
-                        puppeteerConfig.executablePath = process.env.CHROME_PATH;
+                    // Dynamically find Chromium in Replit
+                    const findChromiumPath = () => {
+                        const { execSync } = require('child_process');
+                        try {
+                            // Try to find Chromium in Nix store
+                            const nixChromium = execSync('find /nix/store -name "chromium" -type f -executable 2>/dev/null | head -1', { encoding: 'utf8' }).trim();
+                            if (nixChromium && require('fs').existsSync(nixChromium)) {
+                                console.log(`Using Chromium from Nix store: ${nixChromium}`);
+                                return nixChromium;
+                            }
+                        } catch (error) {
+                            console.log('Could not find Chromium in Nix store, trying environment variables...');
+                        }
+                        
+                        // Fallback to environment variables
+                        if (process.env.PUPPETEER_EXECUTABLE_PATH) {
+                            return process.env.PUPPETEER_EXECUTABLE_PATH;
+                        } else if (process.env.CHROME_PATH) {
+                            return process.env.CHROME_PATH;
+                        }
+                        
+                        return null;
+                    };
+                    
+                    const chromiumPath = findChromiumPath();
+                    if (chromiumPath) {
+                        puppeteerConfig.executablePath = chromiumPath;
+                    } else {
+                        console.warn('⚠️  Could not find Chromium executable. WhatsApp client may fail to initialize.');
                     }
                 }
                 

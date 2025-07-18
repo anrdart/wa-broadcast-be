@@ -11,7 +11,10 @@
     "generate-docs": "npx jsdoc --configure .jsdoc.json --verbose",
     "start": "node server.js",
     "dev": "nodemon server.js",
-    "broadcast": "node server.js"
+    "broadcast": "node server.js",
+    "replit:setup": "node deploy-replit.js",
+    "replit:start": "npm run replit:setup && npm start",
+    "replit:dev": "npm run replit:setup && npm run dev"
   },
   "repository": {
     "type": "git",

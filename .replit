@@ -1,0 +1,36 @@
+[nix]
+channel = "stable-22_11"
+
+[deployment]
+run = ["npm", "run", "replit:start"]
+
+[[ports]]
+localPort = 3000
+externalPort = 80
+
+[env]
+NODE_ENV = "production"
+PORT = "3000"
+PUPPETEER_SKIP_CHROMIUM_DOWNLOAD = "true"
+DISPLAY = ":99"
+NODE_OPTIONS = "--max-old-space-size=512"
+
+[packager]
+language = "nodejs"
+
+[packager.features]
+packageSearch = true
+guessImports = true
+enabledForHosting = false
+
+[languages.javascript]
+pattern = "**/{*.js,*.jsx,*.ts,*.tsx}"
+
+[languages.javascript.languageServer]
+start = "typescript-language-server --stdio"
+
+[gitHubImport]
+requiredFiles = [".replit", "replit.nix"]
+
+[run]
+command = "npm run replit:start"
